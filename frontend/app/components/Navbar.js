@@ -26,7 +26,7 @@ export default function Navbar() {
         </div>
         <div className="nav-auth">
           <Link href="/login" className="btn-secondary">Log In</Link>
-          <Link href="/register" className="btn-primary">Sign Up</Link>
+          <Link href="/signup" className="btn-primary">Sign Up</Link>
         </div>
       </div>
     </nav>
