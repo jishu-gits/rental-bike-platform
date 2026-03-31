@@ -1,0 +1,134 @@
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background Glow Effect */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(0, 255, 170, 0.15) 0%, rgba(13, 15, 19, 0) 70%);
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 600px;
+  z-index: 1;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: 1.5rem 0 3rem;
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.hero-visual {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  z-index: 1;
+}
+
+.hero-card {
+  width: 400px;
+  padding: 1.5rem;
+  border-radius: 20px;
+  transform: rotate(5deg) scale(0.95);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.hero-card:hover {
+  transform: rotate(0deg) scale(1);
+  box-shadow: 0 20px 40px rgba(0, 255, 170, 0.15);
+}
+
+.placeholder-img {
+  width: 100%;
+  height: 250px;
+  background: linear-gradient(45deg, var(--surface-hover), var(--surface-color));
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.card-details h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.price {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Features Section */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.feature-item {
+  padding: 3rem 2rem;
+  border-radius: 20px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.feature-item:hover {
+  transform: translateY(-10px);
+  border-color: var(--primary-color);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.feature-item h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.feature-item p {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 968px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    padding-top: 120px;
+  }
+  .hero-content {
+    margin-bottom: 4rem;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
