@@ -4,8 +4,8 @@ const Booking = require('../models/Booking');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Customer: Create a booking
-router.post('/', authMiddleware(['customer']), async (req, res) => {
+// Customer: Create a booking (any logged-in user can book)
+router.post('/', authMiddleware(), async (req, res) => {
   try {
     const { bikeId, startDate, endDate, totalCost } = req.body;
     
@@ -30,8 +30,8 @@ router.post('/', authMiddleware(['customer']), async (req, res) => {
   }
 });
 
-// Customer: View their own bookings
-router.get('/my-bookings', authMiddleware(['customer']), async (req, res) => {
+// View own bookings (any logged-in user)
+router.get('/my-bookings', authMiddleware(), async (req, res) => {
   try {
     const bookings = await Booking.find({ customerId: req.user.id }).populate('bikeId');
     res.json(bookings);
