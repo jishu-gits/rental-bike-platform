@@ -82,6 +82,45 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Guest Banner */}
+      <section className="guest-banner glass">
+        <div className="container">
+          <div className="banner-content">
+            <h2>🚀 Browse 500+ bikes without signing up</h2>
+            <p>No account needed to explore bikes, read reviews, and check availability. Sign up only when you're ready to book.</p>
+            <Link href="/search" className="btn-secondary" style={{ padding: '0.75rem 1.5rem' }}>
+              Start Browsing
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* EV Section */}
+      <section className="ev-section container section">
+        <div className="ev-content">
+          <div className="ev-text">
+            <h2 className="heading-md">Ride Green with <span className="text-gradient">Electric Bikes</span></h2>
+            <p>Experience the future of biking with our electric motorcycle collection. Zero emissions, instant torque, and silent power.</p>
+            <ul className="ev-features">
+              <li>⚡ Up to 150km range</li>
+              <li>🔋 Fast charging (2-3 hours)</li>
+              <li>💰 Lower running costs</li>
+              <li>🌱 Eco-friendly riding</li>
+            </ul>
+            <Link href="/search?fuelType=electric" className="btn-primary" style={{ padding: '0.9rem 2rem' }}>
+              Explore Electric Bikes
+            </Link>
+          </div>
+          <div className="ev-visual">
+            <div className="glass ev-card">
+              <div className="ev-icon">⚡</div>
+              <h3>Electric Revolution</h3>
+              <p>Join the green movement</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="container section how-it-works">
         <h2 className="heading-md" style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -122,6 +161,41 @@ export default function Home() {
           ) : (
             <Link href="/provider" className="btn-primary" style={{ padding: '0.9rem 2.5rem' }}>Start Listing Free</Link>
           )}
+        </div>
+      </section>
+
+      {/* Bikes Near You */}
+      <section className="nearby-section container section">
+        <h2 className="heading-md" style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          Bikes Near <span className="text-gradient">You</span>
+        </h2>
+        <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          Discover amazing bikes in your city. Allow location access for personalized recommendations.
+        </p>
+        <div className="nearby-actions" style={{ textAlign: 'center' }}>
+          <button
+            className="btn-primary"
+            style={{ padding: '0.9rem 2rem' }}
+            onClick={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    // In a real app, you'd use reverse geocoding to get city
+                    alert('Location detected! Showing bikes near you.');
+                    window.location.href = '/search';
+                  },
+                  () => {
+                    alert('Location access denied. Showing all bikes instead.');
+                    window.location.href = '/search';
+                  }
+                );
+              } else {
+                window.location.href = '/search';
+              }
+            }}
+          >
+            📍 Find Bikes Near Me
+          </button>
         </div>
       </section>
 

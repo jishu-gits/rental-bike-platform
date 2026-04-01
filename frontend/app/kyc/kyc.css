@@ -1,0 +1,187 @@
+.kyc-page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.kyc-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.kyc-header h1 {
+  margin-bottom: 0.5rem;
+}
+
+.kyc-header p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.kyc-content {
+  padding: 2.5rem;
+}
+
+.kyc-status-card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.kyc-status-card.verified {
+  color: #10b981;
+}
+
+.kyc-status-card.pending {
+  color: #f59e0b;
+}
+
+.kyc-status-card.rejected {
+  color: #ef4444;
+}
+
+.status-icon {
+  margin-bottom: 1rem;
+}
+
+.kyc-status-card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.kyc-status-card p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.status-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.kyc-intro {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.kyc-intro svg {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.kyc-intro h2 {
+  margin-bottom: 0.5rem;
+}
+
+.kyc-intro p {
+  color: var(--text-secondary);
+}
+
+.kyc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.upload-section {
+  width: 100%;
+}
+
+.upload-label {
+  display: block;
+  width: 100%;
+}
+
+.upload-label span {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.upload-desc {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.upload-box {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--bg-secondary);
+}
+
+.upload-box:hover {
+  border-color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.upload-box svg {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.upload-box p {
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.upload-box span {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.upload-preview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .kyc-content {
+    padding: 1.5rem;
+  }
+
+  .kyc-status-card {
+    padding: 2rem 1rem;
+  }
+
+  .upload-box {
+    padding: 1.5rem;
+  }
+}

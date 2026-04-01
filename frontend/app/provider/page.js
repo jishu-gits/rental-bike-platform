@@ -10,6 +10,8 @@ export default function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState('add');
   const [myBikes, setMyBikes] = useState([]);
   const [bikesLoading, setBikesLoading] = useState(false);
+  const [providerBookings, setProviderBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [userRole, setUserRole] = useState('customer');
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState('');
@@ -20,8 +22,11 @@ export default function ProviderDashboard() {
     model: '',
     year: '',
     category: 'sports',
+    fuelType: 'petrol',
     pricePerDay: '',
     location: '',
+    city: '',
+    state: '',
   });
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -77,8 +82,22 @@ export default function ProviderDashboard() {
     finally { setBikesLoading(false); }
   };
 
+  // Fetch provider's bookings
+  const fetchProviderBookings = async () => {
+    setBookingsLoading(true);
+    try {
+      const res = await fetch(`${API}/api/bookings/provider`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setProviderBookings(data);
+    } catch {}
+    finally { setBookingsLoading(false); }
+  };
+
   useEffect(() => {
     if (activeTab === 'bikes') fetchMyBikes();
+    if (activeTab === 'bookings') fetchProviderBookings();
   }, [activeTab]);
 
   const handleChange = (e) => {
@@ -182,6 +201,9 @@ export default function ProviderDashboard() {
           <button className={`nav-btn ${activeTab === 'bikes' ? 'active' : ''}`} onClick={() => setActiveTab('bikes')}>
             My Listings
           </button>
+          <button className={`nav-btn ${activeTab === 'bookings' ? 'active' : ''}`} onClick={() => setActiveTab('bookings')}>
+            Bookings
+          </button>
         </aside>
 
         {/* Content Area */}
@@ -241,11 +263,20 @@ export default function ProviderDashboard() {
                       <option value="cruiser">Cruiser</option>
                       <option value="scooter">Scooter</option>
                       <option value="standard">Standard</option>
+                      <option value="electric">Electric</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Fuel Type *</label>
+                    <select name="fuelType" className="form-input" value={formData.fuelType} onChange={handleChange} required>
+                      <option value="petrol">Petrol</option>
+                      <option value="electric">Electric</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
+                  </div>
                   <div className="form-group">
                     <label className="form-label">Price Per Day (₹) *</label>
                     <input
@@ -255,12 +286,34 @@ export default function ProviderDashboard() {
                       value={formData.pricePerDay} onChange={handleChange} required
                     />
                   </div>
+                </div>
+
+                <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Location *</label>
                     <input
                       type="text" name="location" className="form-input"
                       placeholder="e.g. Mumbai, Maharashtra"
                       value={formData.location} onChange={handleChange} required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">City *</label>
+                    <input
+                      type="text" name="city" className="form-input"
+                      placeholder="e.g. Mumbai"
+                      value={formData.city} onChange={handleChange} required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">State *</label>
+                    <input
+                      type="text" name="state" className="form-input"
+                      placeholder="e.g. Maharashtra"
+                      value={formData.state} onChange={handleChange} required
                     />
                   </div>
                 </div>
@@ -332,6 +385,36 @@ export default function ProviderDashboard() {
                       <p className={`availability-tag ${bike.isAvailable ? 'available' : 'unavailable'}`}>
                         {bike.isAvailable ? '● Available' : '● Unavailable'}
                       </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── BOOKINGS TAB ── */}
+          {activeTab === 'bookings' && (
+            <div className="bookings-tab">
+              <h2>Bookings on My Bikes</h2>
+              {bookingsLoading && <p className="tab-subtitle">Loading bookings...</p>}
+              {!bookingsLoading && providerBookings.length === 0 && (
+                <p className="tab-subtitle">No bookings yet. Your bikes will start appearing here once rented.</p>
+              )}
+              <div className="provider-bookings-list">
+                {providerBookings.map((b) => (
+                  <div key={b._id} className="provider-booking-card glass">
+                    <div className="booking-header">
+                      <h3>{b.bikeId?.brand} {b.bikeId?.model}</h3>
+                      <span className={`status-badge status-${b.status}`}>{b.status}</span>
+                    </div>
+                    <div className="booking-details">
+                      <p><strong>Renter:</strong> {b.customerId?.name} ({b.customerId?.email})</p>
+                      <p><strong>Dates:</strong> {new Date(b.startDate).toLocaleDateString('en-IN')} → {new Date(b.endDate).toLocaleDateString('en-IN')}</p>
+                      {b.planType && <p><strong>Plan:</strong> {b.planType.charAt(0).toUpperCase() + b.planType.slice(1)}</p>}
+                      {b.deliveryType === 'doorstep' && (
+                        <p><strong>Delivery:</strong> {b.deliveryAddress?.street}, {b.deliveryAddress?.city}, {b.deliveryAddress?.pincode} at {b.deliverySlot}</p>
+                      )}
+                      <p><strong>Total:</strong> ₹{b.totalCost?.toLocaleString('en-IN')}</p>
                     </div>
                   </div>
                 ))}
