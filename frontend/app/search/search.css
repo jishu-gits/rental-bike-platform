@@ -329,3 +329,73 @@
   color: var(--text-secondary);
   font-size: 0.95rem;
 }
+
+/* ── New additions ── */
+
+/* City Selector */
+.city-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.city-select {
+  padding: 0.6rem 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+  min-width: 180px;
+  color-scheme: dark;
+}
+.city-select:focus { border-color: var(--primary-color); }
+.city-select option { background: var(--surface-color); }
+.clear-city {
+  padding: 0.45rem 0.9rem;
+  border-radius: 50px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.clear-city:hover { color: #ff5050; border-color: #ff5050; }
+
+/* EV Badge */
+.ev-card-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 200, 100, 0.92);
+  color: #fff;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+/* Star Rating */
+.bike-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  margin-bottom: 0.5rem;
+}
+.review-count { color: var(--text-secondary); font-size: 0.75rem; }
+
+/* Filter btn with icon */
+.filter-btn { display: inline-flex; align-items: center; gap: 0.3rem; }

@@ -5,12 +5,18 @@ const bikeSchema = new mongoose.Schema({
   brand: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
-  category: { type: String, enum: ['sports', 'cruiser', 'scooter', 'standard'], required: true },
+  category: { type: String, enum: ['sports', 'cruiser', 'scooter', 'standard', 'electric'], required: true },
+  fuelType: { type: String, enum: ['petrol', 'electric', 'hybrid'], default: 'petrol' },
   pricePerDay: { type: Number, required: true },
   location: { type: String, required: true },
-  images: [{ type: String }], // Array of image URLs
-  isApproved: { type: Boolean, default: true }, // Set to false when admin approval flow is added
-  isAvailable: { type: Boolean, default: true } // Can be toggled by the provider
+  city: { type: String, index: true },
+  state: { type: String },
+  coordinates: { lat: { type: Number }, lng: { type: Number } },
+  images: [{ type: String }],
+  isApproved: { type: Boolean, default: true },
+  isAvailable: { type: Boolean, default: true },
+  averageRating: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Bike', bikeSchema);

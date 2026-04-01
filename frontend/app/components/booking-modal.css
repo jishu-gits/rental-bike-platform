@@ -1,0 +1,335 @@
+/* ── BookingModal CSS ─────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 2rem;
+  position: relative;
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.modal-close:hover { color: var(--text-primary); border-color: var(--primary-color); }
+
+/* Bike header */
+.modal-bike-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.modal-img-wrapper {
+  width: 90px;
+  height: 70px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: var(--surface-color);
+}
+
+/* Steps */
+.modal-steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  transition: var(--transition);
+}
+.step-indicator.active, .step-indicator.done { opacity: 1; color: var(--primary-color); }
+.step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.step-indicator.active .step-dot { background: var(--primary-color); color: var(--bg-color); border-color: var(--primary-color); }
+.step-indicator.done .step-dot   { background: rgba(0,255,170,0.2); color: var(--primary-color); border-color: var(--primary-color); }
+
+/* Plan tabs */
+.plan-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.plan-tab {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  text-align: center;
+}
+.plan-tab:hover { border-color: var(--primary-color); color: var(--text-primary); }
+.plan-tab.active { border-color: var(--primary-color); background: rgba(0,255,170,0.1); color: var(--primary-color); font-weight: 600; }
+
+.discount-pill {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--primary-color);
+  margin-top: 2px;
+}
+
+/* Dates */
+.modal-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.date-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+.date-input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: var(--transition);
+}
+.date-input:focus { border-color: var(--primary-color); }
+
+/* Cost summary */
+.cost-summary {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 0.3rem 0;
+}
+.cost-row.discount { color: var(--primary-color); }
+.cost-row.total-cost {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+/* KYC block */
+.kyc-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #ffa500;
+  font-size: 0.9rem;
+}
+
+/* Booking alerts */
+.booking-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+.booking-error { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255,80,80,0.3); color: #ff5050; }
+
+/* Delivery */
+.delivery-options { display: flex; flex-direction: column; gap: 0.75rem; }
+.delivery-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+.delivery-btn p  { color: var(--text-secondary); font-size: 0.8rem; margin: 0; }
+.delivery-btn:hover, .delivery-btn.active { border-color: var(--primary-color); background: rgba(0,255,170,0.06); }
+
+.slot-options { display: flex; flex-direction: column; gap: 0.5rem; }
+.slot-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+  font-size: 0.875rem;
+}
+.slot-btn:hover, .slot-btn.active { border-color: var(--primary-color); color: var(--primary-color); background: rgba(0,255,170,0.06); }
+
+/* Wallet */
+.wallet-toggle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.wallet-toggle p { color: var(--text-secondary); font-size: 0.8rem; margin: 0; }
+.wallet-toggle.active { border-color: var(--primary-color); background: rgba(0,255,170,0.06); }
+.toggle-switch { margin-left: auto; font-size: 1.2rem; color: var(--primary-color); }
+
+/* Pay methods */
+.pay-methods { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+.pay-method-btn {
+  flex: 1;
+  padding: 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.875rem;
+}
+.pay-method-btn.active { border-color: var(--primary-color); color: var(--primary-color); background: rgba(0,255,170,0.06); }
+
+.upi-info {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+/* Nav */
+.modal-nav {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  justify-content: space-between;
+}
+
+/* EV badge */
+.ev-badge {
+  background: rgba(0, 200, 100, 0.15);
+  color: #00c864;
+  border: 1px solid rgba(0, 200, 100, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 0.5rem;
+}
+
+/* Success */
+.booking-success {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.booking-success h3 { margin: 1rem 0 0.5rem; font-size: 1.4rem; }
+.booking-success p  { color: var(--text-secondary); }
+.success-icon { color: var(--primary-color); }
+
+.form-label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; }
+.form-group  { margin-bottom: 0.75rem; }
+
+.step-content { animation: fadeIn 0.2s ease; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background: rgba(0, 255, 170, 0.15);
+  color: var(--primary-color);
+  border: 1px solid rgba(0, 255, 170, 0.3);
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  margin-bottom: 0.4rem;
+}
