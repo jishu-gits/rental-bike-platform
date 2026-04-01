@@ -51,7 +51,7 @@ router.post(
               '🎉 Your KYC verification is approved! You can now book bikes.');
           }
         } catch (e) { console.error('KYC auto-approve error:', e.message); }
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 1 * 60 * 1000); // 5 minutes
 
       res.json({ success: true, kyc });
     } catch (err) {
