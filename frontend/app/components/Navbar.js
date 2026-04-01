@@ -5,8 +5,11 @@ import './navbar.css';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token'));
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -25,8 +28,24 @@ export default function Navbar() {
           <Link href="/provider" className="nav-item">List Your Bike</Link>
         </div>
         <div className="nav-auth">
-          <Link href="/login" className="btn-secondary">Log In</Link>
-          <Link href="/signup" className="btn-primary">Sign Up</Link>
+          {isLoggedIn ? (
+            <button 
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setIsLoggedIn(false);
+                window.location.href = '/';
+              }} 
+              className="btn-secondary"
+            >
+              Log Out
+            </button>
+          ) : (
+            <>
+              <Link href="/login" className="btn-secondary">Log In</Link>
+              <Link href="/signup" className="btn-primary">Sign Up</Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
