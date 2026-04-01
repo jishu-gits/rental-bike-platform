@@ -6,7 +6,7 @@ const authMiddleware = (roles = []) => {
       const token = req.headers.authorization?.split(" ")[1];
       if (!token) return res.status(401).json({ message: "No token provided, authorization denied." });
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_please_change_in_production');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
 
       if (roles.length && !roles.includes(req.user.role)) {
