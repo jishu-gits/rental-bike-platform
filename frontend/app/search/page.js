@@ -1,48 +1,119 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import './search.css';
 
-// Mock data to visualize UI state
-const MOCK_BIKES = [
-  { id: 1, brand: 'Ducati', model: 'Panigale V4', category: 'sports', price: 199 },
-  { id: 2, brand: 'Harley-Davidson', model: 'Iron 883', category: 'cruiser', price: 120 },
-  { id: 3, brand: 'BMW', model: 'R 1250 GS', category: 'standard', price: 160 },
-  { id: 4, brand: 'Vespa', model: 'Primavera 150', category: 'scooter', price: 45 },
-];
+const CATEGORIES = ['all', 'sports', 'cruiser', 'scooter', 'standard'];
 
 export default function SearchPage() {
+  const [bikes, setBikes] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredBikes = filter === 'all' ? MOCK_BIKES : MOCK_BIKES.filter(b => b.category === filter);
+  useEffect(() => {
+    const fetchBikes = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (!baseUrl) throw new Error('API URL not configured');
+        const url =
+          filter === 'all'
+            ? `${baseUrl}/api/bikes`
+            : `${baseUrl}/api/bikes?category=${filter}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load bikes');
+        const data = await res.json();
+        setBikes(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBikes();
+  }, [filter]);
 
   return (
     <div className="container section search-page">
       <div className="search-header">
-        <h1 className="heading-md">Find Your <span className="text-gradient">Perfect Ride</span></h1>
-        
+        <h1 className="heading-md">
+          Find Your <span className="text-gradient">Perfect Ride</span>
+        </h1>
+
         <div className="filter-bar glass">
-          <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All Bikes</button>
-          <button className={`filter-btn ${filter === 'sports' ? 'active' : ''}`} onClick={() => setFilter('sports')}>Sports</button>
-          <button className={`filter-btn ${filter === 'cruiser' ? 'active' : ''}`} onClick={() => setFilter('cruiser')}>Cruiser</button>
-          <button className={`filter-btn ${filter === 'scooter' ? 'active' : ''}`} onClick={() => setFilter('scooter')}>Scooter</button>
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              className={`filter-btn ${filter === cat ? 'active' : ''}`}
+              onClick={() => setFilter(cat)}
+            >
+              {cat === 'all' ? 'All Bikes' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid-container">
-        {filteredBikes.map(bike => (
-          <div key={bike.id} className="bike-card glass">
-            <div className="bike-img-placeholder"></div>
-            <div className="bike-info">
-              <span className="badge">{bike.category}</span>
-              <h3>{bike.brand} {bike.model}</h3>
-              <div className="bike-footer">
-                <span className="price">${bike.price} <small>/day</small></span>
-                <button className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Book Now</button>
+      {loading && (
+        <div className="loading-state">
+          <div className="spinner" />
+          <p>Loading bikes...</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="error-state">
+          <p>⚠️ {error}</p>
+        </div>
+      )}
+
+      {!loading && !error && bikes.length === 0 && (
+        <div className="empty-state">
+          <p>No bikes available in this category yet. Check back soon!</p>
+        </div>
+      )}
+
+      {!loading && !error && bikes.length > 0 && (
+        <div className="grid-container">
+          {bikes.map((bike) => (
+            <div key={bike._id} className="bike-card glass">
+              <div className="bike-img-wrapper">
+                {bike.images && bike.images.length > 0 ? (
+                  <Image
+                    src={bike.images[0]}
+                    alt={`${bike.brand} ${bike.model}`}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                ) : (
+                  <div className="bike-img-placeholder">
+                    <span>No Image</span>
+                  </div>
+                )}
+              </div>
+              <div className="bike-info">
+                <span className="badge">{bike.category}</span>
+                <h3>{bike.brand} {bike.model}</h3>
+                <p className="bike-meta">{bike.year} · {bike.location}</p>
+                <div className="bike-footer">
+                  <span className="price">
+                    ₹{bike.pricePerDay.toLocaleString('en-IN')}{' '}
+                    <small>/day</small>
+                  </span>
+                  <button
+                    className="btn-primary"
+                    style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem' }}
+                  >
+                    Book Now
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

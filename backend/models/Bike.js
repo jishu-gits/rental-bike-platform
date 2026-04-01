@@ -9,7 +9,7 @@ const bikeSchema = new mongoose.Schema({
   pricePerDay: { type: Number, required: true },
   location: { type: String, required: true },
   images: [{ type: String }], // Array of image URLs
-  isApproved: { type: Boolean, default: false }, // Admin approval
+  isApproved: { type: Boolean, default: true }, // Set to false when admin approval flow is added
   isAvailable: { type: Boolean, default: true } // Can be toggled by the provider
 }, { timestamps: true });
 
