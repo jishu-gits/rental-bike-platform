@@ -1,0 +1,241 @@
+.account-page {
+  padding-top: 120px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.not-logged-in {
+  max-width: 400px;
+  margin: 5rem auto;
+  padding: 3rem 2rem;
+  border-radius: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.not-logged-in h2 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+/* Header Card */
+.account-header {
+  padding: 2rem 2.5rem;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.account-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), #00b3ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bg-color);
+  flex-shrink: 0;
+}
+
+.account-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.account-email {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0.2rem 0 0.5rem;
+}
+
+.account-role-badge {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(0, 255, 170, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(0, 255, 170, 0.2);
+}
+
+/* Tabs */
+.account-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--surface-color);
+  padding: 0.4rem;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: var(--bg-color);
+  font-weight: 600;
+}
+
+.tab-content {
+  padding: 2rem 2.5rem;
+  border-radius: 20px;
+}
+
+.tab-content h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+/* Detail List */
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.detail-icon {
+  color: var(--primary-color);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.upgrade-hint {
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.auth-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Bookings */
+.loading-hint, .empty-bookings {
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.booking-card {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  transition: var(--transition);
+}
+
+.booking-card:hover {
+  border-color: var(--primary-color);
+}
+
+.booking-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.booking-top h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.booking-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.booking-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.booking-cost {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.35rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-confirmed { background: rgba(0,255,170,0.1); color: var(--primary-color); border: 1px solid rgba(0,255,170,0.2); }
+.status-pending { background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.2); }
+.status-cancelled { background: rgba(255,77,77,0.1); color: #ff6b6b; border: 1px solid rgba(255,77,77,0.2); }
+.status-completed { background: rgba(100,200,200,0.1); color: #64c8c8; border: 1px solid rgba(100,200,200,0.2); }

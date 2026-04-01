@@ -1,0 +1,267 @@
+.static-page {
+  padding-top: 120px;
+  min-height: 100vh;
+}
+
+.static-hero {
+  text-align: center;
+  padding: 4rem 0 5rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.static-tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--primary-color);
+  background: rgba(0, 255, 170, 0.08);
+  border: 1px solid rgba(0, 255, 170, 0.2);
+  padding: 0.25rem 0.9rem;
+  border-radius: 50px;
+  margin-bottom: 1.25rem;
+}
+
+.static-hero h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+}
+
+.static-lead {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+/* Pricing Cards */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+.pricing-card {
+  padding: 2.5rem 2rem;
+  border-radius: 20px;
+  position: relative;
+}
+
+.pricing-featured {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 40px rgba(0, 255, 170, 0.1);
+}
+
+.featured-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary-color);
+  color: var(--bg-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 1rem;
+  border-radius: 50px;
+  white-space: nowrap;
+}
+
+.pricing-header {
+  margin-bottom: 2rem;
+}
+
+.plan-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pricing-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.pricing-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.pricing-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.pricing-features li {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.pricing-features li strong {
+  color: var(--text-primary);
+}
+
+/* FAQ */
+.pricing-faq {
+  padding: 3rem;
+  border-radius: 24px;
+  margin-top: 2rem;
+}
+
+.pricing-faq h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.faq-item h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.faq-item p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+/* Legal Body */
+.legal-body {
+  padding: 3rem;
+  border-radius: 24px;
+}
+
+.legal-section {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.legal-section:last-child {
+  border-bottom: none;
+}
+
+.legal-section h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.legal-section p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+/* Insurance */
+.insurance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto 4rem;
+}
+
+.insurance-card {
+  padding: 2.5rem 2rem;
+  border-radius: 20px;
+  position: relative;
+}
+
+.insurance-featured {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 40px rgba(0, 255, 170, 0.1);
+}
+
+.insurance-card-header {
+  margin-bottom: 2rem;
+}
+
+.insurance-card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0;
+}
+
+.insurance-note {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.claim-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.claim-step {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.claim-number {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 50px;
+}
+
+.claim-step h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.claim-step p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.insurance-cta {
+  margin-top: 3rem;
+  padding: 3rem;
+  border-radius: 24px;
+  text-align: center;
+}
+
+.insurance-cta h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.insurance-cta p {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .pricing-grid, .insurance-grid {
+    grid-template-columns: 1fr;
+  }
+  .static-hero h1 {
+    font-size: 2rem;
+  }
+  .legal-body, .pricing-faq {
+    padding: 1.5rem;
+  }
+}

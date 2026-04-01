@@ -17,14 +17,24 @@ export default function Footer() {
               <li><Link href="/search">Browse Bikes</Link></li>
               <li><Link href="/provider">List Your Bike</Link></li>
               <li><Link href="/pricing">Pricing</Link></li>
+              <li><Link href="/insurance">Insurance</Link></li>
+            </ul>
+          </div>
+          <div className="footer-links">
+            <h3>Account</h3>
+            <ul>
+              <li><Link href="/account">My Account</Link></li>
+              <li><Link href="/account?tab=bookings">My Bookings</Link></li>
+              <li><Link href="/login">Log In</Link></li>
+              <li><Link href="/signup">Sign Up</Link></li>
             </ul>
           </div>
           <div className="footer-links">
             <h3>Legal</h3>
             <ul>
-              <li><Link href="#">Terms of Service</Link></li>
-              <li><Link href="#">Privacy Policy</Link></li>
-              <li><Link href="#">Insurance</Link></li>
+              <li><Link href="/terms">Terms of Service</Link></li>
+              <li><Link href="/privacy">Privacy Policy</Link></li>
+              <li><Link href="/insurance">Insurance</Link></li>
             </ul>
           </div>
         </div>
