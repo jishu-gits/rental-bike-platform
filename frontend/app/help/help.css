@@ -71,20 +71,23 @@
 .faq-question {
   width: 100%;
   padding: 1rem 1.5rem;
-  background: var(--bg-primary);
-  border: none;
+  background: #111826;
+  border: 1px solid #24304f;
+  color: #f8fafc;
   text-align: left;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 1rem;
-  font-weight: 500;
-  transition: background 0.3s ease;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  border-radius: 8px;
 }
 
 .faq-question:hover {
-  background: var(--bg-secondary);
+  background: #203051;
+  border-color: #6395f2;
 }
 
 .chevron {
@@ -98,20 +101,30 @@
 
 .faq-answer {
   padding: 0 1.5rem 1rem;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
+  background: #161f2f;
+  border-top: 1px solid #24304f;
 }
 
 .faq-answer p {
   margin: 0;
-  color: var(--text-primary);
-  line-height: 1.5;
+  color: #d8e2f6;
+  line-height: 1.6;
 }
 
 .support-section {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+/* Hide duplicate floating help UI for help page */
+.floating-help {
+  display: none !important;
+}
+
+/* Ensure icon color contrast for existing in-page status */
+.support-icon {
+  color: #00efff;
 }
 
 .support-card {
