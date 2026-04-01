@@ -300,6 +300,38 @@ select.form-input option {
   color: var(--primary-color);
 }
 
+/* Provider Gate */
+.provider-gate {
+  max-width: 520px;
+  margin: 3rem auto;
+  padding: 3rem 2.5rem;
+  border-radius: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gate-icon {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+}
+
+.provider-gate h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.provider-gate p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.provider-gate strong {
+  color: var(--text-primary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dashboard-layout {

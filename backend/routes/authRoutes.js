@@ -41,4 +41,25 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Become a Provider — any logged-in user can self-upgrade
+const authMiddleware = require('../middleware/authMiddleware');
+
+router.post('/become-provider', authMiddleware(), async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { role: 'provider' },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Issue a fresh token with the updated role
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
 module.exports = router;
+

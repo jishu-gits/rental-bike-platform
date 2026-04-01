@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { UploadCloud, X, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { UploadCloud, X, CheckCircle, AlertCircle, Loader, ShieldCheck } from 'lucide-react';
 import './provider.css';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
@@ -10,6 +10,9 @@ export default function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState('add');
   const [myBikes, setMyBikes] = useState([]);
   const [bikesLoading, setBikesLoading] = useState(false);
+  const [userRole, setUserRole] = useState('customer');
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -20,14 +23,46 @@ export default function ProviderDashboard() {
     pricePerDay: '',
     location: '',
   });
-  const [images, setImages] = useState([]); // File objects
-  const [imagePreviews, setImagePreviews] = useState([]); // Data URLs for preview
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
+  const [submitStatus, setSubmitStatus] = useState(null);
   const [submitMsg, setSubmitMsg] = useState('');
   const fileInputRef = useRef(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  // Read role from stored user object
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+        if (stored.role) setUserRole(stored.role);
+      } catch {}
+    }
+  }, []);
+
+  // Upgrade to provider
+  const becomeProvider = async () => {
+    setUpgrading(true);
+    setUpgradeError('');
+    try {
+      const res = await fetch(`${API}/api/auth/become-provider`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to upgrade');
+      // Refresh token and user in localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUserRole('provider');
+    } catch (err) {
+      setUpgradeError(err.message);
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   // Fetch provider's own bikes
   const fetchMyBikes = async () => {
@@ -111,6 +146,33 @@ export default function ProviderDashboard() {
         <p>List your bikes, track your listings, and manage availability.</p>
       </div>
 
+      {/* ── PROVIDER GATE ── */}
+      {userRole !== 'provider' && (
+        <div className="provider-gate glass">
+          <ShieldCheck size={52} className="gate-icon" />
+          <h2>Become a Bike Provider</h2>
+          <p>
+            Your account is currently registered as a <strong>customer</strong>.
+            Upgrade to a provider account to list bikes and earn on RidePulse. This is free and instant.
+          </p>
+          {upgradeError && (
+            <div className="alert alert-error" style={{ marginTop: '1rem' }}>
+              <AlertCircle size={16} /> {upgradeError}
+            </div>
+          )}
+          <button
+            className="btn-primary"
+            style={{ marginTop: '1.5rem', padding: '0.9rem 2.5rem' }}
+            onClick={becomeProvider}
+            disabled={upgrading}
+          >
+            {upgrading ? <><Loader size={16} className="animate-spin" /> Upgrading...</> : 'Become a Provider — It\'s Free'}
+          </button>
+        </div>
+      )}
+
+      {/* ── MAIN DASHBOARD (only if provider) ── */}
+      {userRole === 'provider' && (
       <div className="dashboard-layout">
         {/* Sidebar */}
         <aside className="dashboard-sidebar glass">
@@ -278,6 +340,7 @@ export default function ProviderDashboard() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
