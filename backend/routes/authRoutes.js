@@ -28,7 +28,7 @@ router.post(
   catchAsync(async (req, res, next) => {
     const { name, email, password, phone, role, referralCode } = req.body;
 
-    // Check for duplicate email early — gives a cleaner message than the Mongoose 11000 handler
+    // Check for duplicate email early — clearer message before hashing
     const existing = await User.findOne({ email });
     if (existing) return next(new AppError('An account with this email already exists', 409));
 
@@ -183,12 +183,9 @@ router.post(
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return next(new AppError('Invalid email or password', 401));
 
-    // Block login if email not verified (only enforce when email service is configured)
-    if (process.env.SMTP_HOST && !user.emailVerified) {
-      return next(new AppError(
-        'Please verify your email before logging in. Check your inbox.',
-        403
-      ));
+    // Block login if email not verified
+    if (!user.emailVerified) {
+      return next(new AppError('Please verify your email before logging in. Check your inbox.', 403));
     }
 
     if (user.suspended) {

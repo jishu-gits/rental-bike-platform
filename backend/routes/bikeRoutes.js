@@ -9,10 +9,10 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 const validate = require('../middleware/validate');
 const { geocodeCity } = require('../utils/geocode');
+const { addBikeSchema, updateBikeSchema } = require('../validations/bike.validation');
+const { objectIdSchema } = require('../validations/common.validation');
 
-const objectIdParamSchema = z.object({
-  id: z.string().regex(/^[a-f\d]{24}$/i, 'ID must be a valid MongoDB ObjectId'),
-});
+const objectIdParamSchema = z.object({ id: objectIdSchema });
 
 // ── GET /api/bikes/cities (public) ───────────────────────────────────────────
 router.get('/cities', catchAsync(async (req, res) => {
@@ -58,6 +58,7 @@ router.post(
   '/',
   authMiddleware(['provider']),
   upload.array('images', 5),
+  validate(addBikeSchema),
   catchAsync(async (req, res) => {
     const imageUrls = req.files ? req.files.map((f) => f.path) : [];
 
@@ -106,6 +107,7 @@ router.patch(
   '/:id',
   authMiddleware(['provider']),
   validate(objectIdParamSchema, 'params'),
+  validate(updateBikeSchema),
   catchAsync(async (req, res, next) => {
     const bike = await Bike.findById(req.params.id);
     if (!bike) return next(new AppError('Bike not found', 404));

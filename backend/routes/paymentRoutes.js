@@ -7,6 +7,8 @@ const Payment = require('../models/Payment');
 const authMiddleware = require('../middleware/authMiddleware');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+const validate = require('../middleware/validate');
+const { createOrderSchema, verifyPaymentSchema } = require('../validations/payment.validation');
 
 let razorpay;
 try {
@@ -16,15 +18,9 @@ try {
 }
 
 // ─── POST /api/payments/create-order ─────────────────────────────────────────
-router.post('/create-order', authMiddleware(), catchAsync(async (req, res, next) => {
+router.post('/create-order', authMiddleware(), validate(createOrderSchema), catchAsync(async (req, res, next) => {
   if (!razorpay) return next(new AppError('Payment gateway not configured', 503));
-
   const { amount, bookingId, currency = 'INR' } = req.body;
-
-  if (!amount || !Number.isInteger(Number(amount)) || Number(amount) < 100) {
-    return next(new AppError('Amount must be a positive integer in paise (minimum 100 paise = ₹1)', 400));
-  }
-  if (!bookingId) return next(new AppError('bookingId is required', 400));
 
   const booking = await Booking.findById(bookingId);
   if (!booking) return next(new AppError('Booking not found', 404));
@@ -58,12 +54,8 @@ router.post('/create-order', authMiddleware(), catchAsync(async (req, res, next)
 }));
 
 // ─── POST /api/payments/verify ────────────────────────────────────────────────
-router.post('/verify', authMiddleware(), catchAsync(async (req, res, next) => {
+router.post('/verify', authMiddleware(), validate(verifyPaymentSchema), catchAsync(async (req, res, next) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    return next(new AppError('razorpay_order_id, razorpay_payment_id, and razorpay_signature are required', 400));
-  }
 
   // HMAC-SHA256 signature verification
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -101,61 +93,41 @@ router.post('/verify', authMiddleware(), catchAsync(async (req, res, next) => {
 router.post(
   '/webhook',
   express.raw({ type: 'application/json' }),
-  async (req, res) => {
+  catchAsync(async (req, res, next) => {
     const signature = req.headers['x-razorpay-signature'];
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error('RAZORPAY_WEBHOOK_SECRET not set');
-      return res.status(500).json({ success: false });
+      return next(new AppError('Webhook not configured on server', 500));
     }
 
     // Verify webhook signature
-    const expectedSig = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(req.body)
-      .digest('hex');
-
+    const expectedSig = crypto.createHmac('sha256', webhookSecret).update(req.body).digest('hex');
     if (expectedSig !== signature) {
-      return res.status(403).json({ success: false, message: 'Invalid webhook signature' });
+      return next(new AppError('Invalid webhook signature', 403));
     }
 
     let event;
     try {
       event = JSON.parse(req.body.toString());
-    } catch {
-      return res.status(400).json({ success: false, message: 'Invalid payload' });
+    } catch (e) {
+      return next(new AppError('Invalid webhook payload', 400));
     }
 
     const eventType = event.event;
     const paymentEntity = event.payload?.payment?.entity;
 
-    try {
-      if (eventType === 'payment.captured' || eventType === 'order.paid') {
-        await Payment.findOneAndUpdate(
-          { orderId: paymentEntity?.order_id },
-          { status: 'paid', paymentId: paymentEntity?.id }
-        );
-        await Booking.findOneAndUpdate(
-          { _id: (await Payment.findOne({ orderId: paymentEntity?.order_id }))?.bookingId },
-          { status: 'confirmed' }
-        );
-      } else if (eventType === 'payment.failed') {
-        const pmt = await Payment.findOneAndUpdate(
-          { orderId: paymentEntity?.order_id },
-          { status: 'failed' },
-          { new: true }
-        );
-        if (pmt) {
-          await Booking.findByIdAndUpdate(pmt.bookingId, { status: 'payment_failed' });
-        }
-      }
-    } catch (err) {
-      console.error('Webhook processing error:', err.message);
+    if (eventType === 'payment.captured' || eventType === 'order.paid') {
+      await Payment.findOneAndUpdate({ orderId: paymentEntity?.order_id }, { status: 'paid', paymentId: paymentEntity?.id });
+      const p = await Payment.findOne({ orderId: paymentEntity?.order_id });
+      if (p) await Booking.findByIdAndUpdate(p.bookingId, { status: 'confirmed' });
+    } else if (eventType === 'payment.failed') {
+      const pmt = await Payment.findOneAndUpdate({ orderId: paymentEntity?.order_id }, { status: 'failed' }, { new: true });
+      if (pmt) await Booking.findByIdAndUpdate(pmt.bookingId, { status: 'payment_failed' });
     }
 
     res.json({ success: true });
-  }
+  })
 );
 
 module.exports = router;

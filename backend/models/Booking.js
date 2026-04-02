@@ -8,7 +8,8 @@ const bookingSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   hours: { type: Number, default: 0 },          // used for hourly plan
   totalCost: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'confirmed', 'cancelled', 'completed'], default: 'confirmed' },
+  status: { type: String, enum: ['pending', 'confirmed', 'cancelled', 'completed', 'payment_failed', 'pending_return'], default: 'confirmed' },
+  returned: { type: Boolean, default: false },
   cancelledAt: { type: Date },
   refundAmount: { type: Number, default: 0 },
   // Delivery

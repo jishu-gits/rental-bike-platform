@@ -1,4 +1,4 @@
-// RidePulse — Zod-based validation middleware factory for request body/query/params
+// RidePulse — Zod validation middleware factory for request `body`, `query`, and `params`
 const { ZodError } = require('zod');
 const AppError = require('../utils/AppError');
 
@@ -12,13 +12,16 @@ const AppError = require('../utils/AppError');
 const validate = (schema, source = 'body') => (req, res, next) => {
   try {
     req[source] = schema.parse(req[source]);
-    next();
+    return next();
   } catch (err) {
     if (err instanceof ZodError) {
-      const messages = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
+      const messages = err.errors.map((e) => {
+        const path = e.path && e.path.length ? e.path.join('.') : source;
+        return `${path}: ${e.message}`;
+      });
       return next(new AppError(messages.join('. '), 400));
     }
-    next(err);
+    return next(err);
   }
 };
 

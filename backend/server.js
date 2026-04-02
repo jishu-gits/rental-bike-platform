@@ -141,11 +141,14 @@ io.on('connection', (socket) => {
 // Export io for use in routes/utils
 app.set('io', io);
 
+// Export app and io early so workers/schedulers can access Socket.io
+module.exports = { app, io };
+
 // ─── Start cron jobs ─────────────────────────────────────────────────────────
 try {
   require('./schedulers/cronJobs');
 } catch (e) {
-  console.warn('Cron jobs could not start (Redis may not be configured):', e.message);
+  console.warn('Cron jobs could not start:', e.message);
 }
 
 // ─── Database + server startup ───────────────────────────────────────────────
@@ -174,4 +177,4 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-module.exports = { app, io };
+// (exports already assigned above)

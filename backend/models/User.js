@@ -6,6 +6,12 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['customer', 'provider', 'admin'], default: 'customer' },
+  // Email / phone verification flags (added to support verification flow)
+  emailVerified: { type: Boolean, default: false },
+  phoneVerified: { type: Boolean, default: false },
+  phone: { type: String, default: null },
+  suspended: { type: Boolean, default: false },
+  // Backwards-compatible field — keep if present
   isVerified: { type: Boolean, default: false },
   identityProofUrl: { type: String, default: null },
   // Referral
