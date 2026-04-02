@@ -1,42 +1,20 @@
-// RidePulse — Nodemailer email sender with HTML templates for transactional emails
-const nodemailer = require('nodemailer');
+// RidePulse — Email sending via Brevo HTTP API (avoids SMTP port blocks)
+const Brevo = require('@getbrevo/brevo');
 
-// Create transport from SMTP env vars (disabled gracefully if not configured)
-let transporter = null;
+const client = Brevo.ApiClient.instance;
+client.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
 
-function getTransporter() {
-  if (transporter) return transporter;
-  if (!process.env.SMTP_HOST) return null;
+const sendEmail = async ({ to, subject, html }) => {
+  const apiInstance = new Brevo.TransactionalEmailsApi();
 
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  return transporter;
-}
+  const email = new Brevo.SendSmtpEmail();
+  email.to = [{ email: to }];
+  email.sender = { email: process.env.EMAIL_FROM_ADDRESS, name: 'RidePulse' };
+  email.subject = subject;
+  email.htmlContent = html;
 
-/**
- * Sends a transactional email.
- * @param {{ to: string, subject: string, html: string }} options
- */
-async function sendEmail({ to, subject, html }) {
-  const t = getTransporter();
-  if (!t) {
-    console.warn(`[Email] SMTP not configured — skipping send to ${to}: ${subject}`);
-    return;
-  }
-  await t.sendMail({
-    from: process.env.EMAIL_FROM || 'RidePulse <noreply@ridepulse.com>',
-    to,
-    subject,
-    html,
-  });
-}
+  await apiInstance.sendTransacEmail(email);
+};
 
 // ─── Email templates ─────────────────────────────────────────────────────────
 
@@ -52,7 +30,7 @@ function verifyEmailTemplate(name, verificationUrl) {
     <p style="color:#aaa;margin-top:4px;margin-bottom:32px;">Verify your email address</p>
     <p>Hi <strong>${name}</strong>,</p>
     <p style="color:#ccc;line-height:1.6;">
-      Thanks for joining RidePulse! Please verify your email address to activate your account 
+      Thanks for joining RidePulse! Please verify your email address to activate your account
       and start exploring bikes near you.
     </p>
     <div style="text-align:center;margin:32px 0;">
