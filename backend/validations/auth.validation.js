@@ -1,36 +1,4 @@
-// RidePulse — Zod schemas for authentication endpoints (register/login)
-const { z } = require('zod');
 
-const nameSchema = z.preprocess((val) => (typeof val === 'string' ? val.trim() : val),
-  z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name must be at most 50 characters')
-);
-
-const emailSchema = z.preprocess((val) => (typeof val === 'string' ? val.trim().toLowerCase() : val),
-  z.string().email('Invalid email address')
-);
-
-const passwordSchema = z.string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number');
-
-const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number').optional();
-
-const roleSchema = z.enum(['customer', 'provider']).optional().default('customer');
-
-const registerSchema = z.object({
-  name: nameSchema,
-  email: emailSchema,
-  password: passwordSchema,
-  phone: phoneSchema,
-  role: roleSchema,
-});
-
-const loginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, 'Password is required'),
-});
-
-module.exports = { registerSchema, loginSchema };
 // RidePulse — Zod schemas for auth-related request validation
 const { z } = require('zod');
 
