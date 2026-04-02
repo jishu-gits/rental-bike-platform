@@ -239,7 +239,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
                     </div>
                     <div className="date-group">
                       <label><Calendar size={14} /> End Date</label>
-                      <input type="date" min={startDate || today} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
+                      <input type="date" min={startDate ? new Date(new Date(startDate).getTime() + 86400000).toISOString().split('T')[0] : today} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
                     </div>
                   </div>
                 )}
