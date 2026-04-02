@@ -1,29 +1,4 @@
-// RidePulse — Zod schemas for bike create/update endpoints
-const { z } = require('zod');
 
-const addBikeSchema = z.object({
-  name: z.preprocess((val) => (typeof val === 'string' ? val.trim() : val),
-    z.string().min(3, 'Name must be at least 3 characters').max(100, 'Name too long')
-  ),
-  category: z.enum(['Sports', 'Cruiser', 'Scooter', 'Standard', 'Electric']),
-  fuelType: z.enum(['petrol', 'electric', 'hybrid']),
-  pricePerDay: z.preprocess((val) => (typeof val === 'string' ? Number(val) : val),
-    z.number().positive('Price must be positive').max(10000, 'Price exceeds maximum allowed')
-  ),
-  city: z.preprocess((val) => (typeof val === 'string' ? val.trim() : val),
-    z.string().min(2, 'City must be at least 2 characters').max(100, 'City too long')
-  ),
-  description: z.preprocess((val) => (typeof val === 'string' ? val.trim() : val),
-    z.string().max(500, 'Description too long')
-  ).optional(),
-  available: z.boolean().optional().default(true),
-});
-
-const updateBikeSchema = addBikeSchema.partial().refine((obj) => Object.keys(obj).length > 0, {
-  message: 'At least one field must be provided',
-});
-
-module.exports = { addBikeSchema, updateBikeSchema };
 // RidePulse — Zod schemas for bike create/update request validation
 const { z } = require('zod');
 
