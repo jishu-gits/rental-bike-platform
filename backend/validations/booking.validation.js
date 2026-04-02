@@ -26,10 +26,22 @@ const createBookingSchema = z
       .optional(),
 
     deliverySlot: z.string().optional(),
-    hours: z.number().int().min(1).optional().default(0),
+    hours: z.number().int().min(0).optional().default(0),
     useWallet: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
+    if (!data.startDate || isNaN(Date.parse(data.startDate))) {
+      ctx.addIssue({ code: z.ZodIssueCode.invalid_type, path: ['startDate'], message: 'startDate must be a valid date' });
+    } else if (new Date(data.startDate) <= new Date()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['startDate'], message: 'startDate must be a valid future date' });
+    }
+
+    if (data.planType === 'hourly') {
+      if (!data.hours || data.hours < 1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['hours'], message: 'hours must be greater than or equal to 1 for hourly bookings' });
+      }
+    }
+
     if (data.startDate && data.endDate) {
       if (new Date(data.endDate) <= new Date(data.startDate)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['endDate'], message: 'endDate must be after startDate' });
