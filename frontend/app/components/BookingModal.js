@@ -63,6 +63,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
 
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const today = new Date().toISOString().split('T')[0];
   const totalCost = computeTotal(bike, plan, startDate, endDate, hours);
   const deliverySurcharge = deliveryType === 'doorstep' ? 50 : 0;
@@ -220,7 +221,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
                   <div className="modal-dates">
                     <div className="date-group">
                       <label><Calendar size={14} /> Date</label>
-                      <input type="date" min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} className="date-input" />
+                      <input type="date" min={tomorrow} value={startDate} onChange={(e) => setStartDate(e.target.value)} className="date-input" />
                     </div>
                     <div className="date-group">
                       <label><Clock size={14} /> Start Time</label>
@@ -228,7 +229,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
                     </div>
                     <div className="date-group">
                       <label><Clock size={14} /> Duration (hours)</label>
-                      <input type="number" min={1} max={24} value={hours} onChange={(e) => setHours(Number(e.target.value))} className="date-input" />
+                      <input type="number" min={1} max={24} value={hours} onChange={(e) => setHours(Math.max(1, Number(e.target.value)))} className="date-input" />
                     </div>
                   </div>
                 ) : (
@@ -239,7 +240,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
                     </div>
                     <div className="date-group">
                       <label><Calendar size={14} /> End Date</label>
-                      <input type="date" min={startDate ? new Date(new Date(startDate).getTime() + 86400000).toISOString().split('T')[0] : today} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
+                      <input type="date" min={startDate ? new Date(new Date(startDate).getTime() + 86400000).toISOString().split('T')[0] : tomorrow} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
                     </div>
                   </div>
                 )}
