@@ -37,6 +37,10 @@ if (!process.env.JWT_SECRET) {
 }
 
 const app = express();
+
+// For Render / proxy environments, trust forwarded headers for rate limiting and IP.
+app.set('trust proxy', 1);
+
 const httpServer = createServer(app);
 
 // ─── Security headers ────────────────────────────────────────────────────────

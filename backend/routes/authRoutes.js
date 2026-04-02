@@ -170,6 +170,17 @@ router.post(
   })
 );
 
+// ─── GET /api/auth/test-email ─────────────────────────────────────────────────
+// For debugging SMTP delivery; remove in production.
+router.get('/test-email', catchAsync(async (req, res) => {
+  await sendEmail({
+    to: req.query.to || 'hero49045@gmail.com',
+    subject: 'RidePulse SMTP test',
+    html: '<p>If you receive this, SMTP is working</p>',
+  });
+  res.json({ success: true, message: 'Test email sent (if SMTP is configured)' });
+}));
+
 // ─── POST /api/auth/login ────────────────────────────────────────────────────
 router.post(
   '/login',
