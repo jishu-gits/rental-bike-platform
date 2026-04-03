@@ -139,6 +139,24 @@ export default function AccountPage() {
     alert('Referral code copied to clipboard!');
   };
 
+  const handleResendVerification = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Verification email sent! Check your inbox.');
+      } else {
+        alert(data.message || 'Failed to send verification email');
+      }
+    } catch (err) {
+      alert('Error sending verification email');
+    }
+  };
+
   if (!user) {
     return (
       <div className="account-page container section">
@@ -165,6 +183,36 @@ export default function AccountPage() {
           <span className="account-role-badge">{user.role}</span>
         </div>
       </div>
+
+      {/* Email Verification Banner */}
+      {user && !user.emailVerified && (
+        <div style={{
+          background: 'rgba(255, 193, 7, 0.15)',
+          border: '1px solid rgba(255, 193, 7, 0.3)',
+          borderRadius: '8px',
+          padding: '10px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '13px',
+          margin: '8px 0',
+        }}>
+          <span>Verify your email to secure your account.</span>
+          <button
+            onClick={handleResendVerification}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ffc107',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500,
+            }}
+          >
+            Resend email →
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="account-tabs">
@@ -236,7 +284,7 @@ export default function AccountPage() {
             </div>
           )}
           <div className="bookings-list">
-            {bookings.map((b) => (
+            {bookings.filter(b => b.status !== 'pending_payment').map((b) => (
               <div key={b._id} className="booking-card">
                 <div className="booking-top">
                   <div>

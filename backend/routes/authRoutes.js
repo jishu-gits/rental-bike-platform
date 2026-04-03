@@ -181,6 +181,75 @@ router.get('/test-email', catchAsync(async (req, res) => {
   res.json({ success: true, message: 'Test email sent (if SMTP is configured)' });
 }));
 
+// ─── POST /api/auth/request-otp ─────────────────────────────────────────────
+router.post('/request-otp', catchAsync(async (req, res, next) => {
+  const { phone } = req.body;
+  if (!phone) return next(new AppError('Phone number is required', 400));
+
+  const user = await User.findOne({ phone });
+  if (!user) return next(new AppError('No account found with this phone number', 404));
+
+  const otp = generateOTP();
+  await saveOTP(phone, otp);
+  await sendOTP(phone, otp);
+
+  res.json({ success: true, message: 'OTP sent to your phone number' });
+}));
+
+// ─── POST /api/auth/login-otp ───────────────────────────────────────────────
+router.post('/login-otp', catchAsync(async (req, res, next) => {
+  const { phone, otp } = req.body;
+  if (!phone || !otp) return next(new AppError('Phone and OTP are required', 400));
+
+  const valid = await verifyOTP(phone, otp);
+  if (!valid) return next(new AppError('Invalid or expired OTP', 400));
+
+  const user = await User.findOne({ phone });
+  if (!user) return next(new AppError('User not found', 404));
+
+  // Mark phone as verified
+  user.phoneVerified = true;
+  await user.save();
+
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: '7d',
+  });
+
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    },
+  });
+}));
+
+// ─── POST /api/auth/resend-verification ──────────────────────────────────────
+router.post('/resend-verification', authMiddleware(), catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  if (!user) return next(new AppError('User not found', 404));
+  if (user.emailVerified) return next(new AppError('Email is already verified', 400));
+
+  const verifyToken = jwt.sign({ id: user._id }, process.env.EMAIL_VERIFY_SECRET || process.env.JWT_SECRET, { expiresIn: '24h' });
+  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verifyToken}`;
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Verify your RidePulse account',
+      html: verifyEmailTemplate(user.name, verificationUrl),
+    });
+    res.json({ success: true, message: 'Verification email sent' });
+  } catch (err) {
+    console.error('Resend verification email failed:', err.message);
+    return next(new AppError('Failed to send verification email', 500));
+  }
+}));
+
 // ─── POST /api/auth/login ────────────────────────────────────────────────────
 router.post(
   '/login',
@@ -194,10 +263,10 @@ router.post(
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return next(new AppError('Invalid email or password', 401));
 
-    // Block login if email not verified
-    if (!user.emailVerified) {
-      return next(new AppError('Please verify your email before logging in. Check your inbox.', 403));
-    }
+    // Just attach a flag — don't block login
+    const emailWarning = !user.emailVerified
+      ? 'Please verify your email to access all features.'
+      : null;
 
     if (user.suspended) {
       return next(new AppError('Your account has been suspended. Please contact support.', 403));
@@ -207,6 +276,7 @@ router.post(
     res.json({
       success: true,
       token,
+      emailWarning, // frontend shows this as a dismissible banner, not a blocker
       user: { id: user._id, name: user.name, email: user.email, role: user.role, referralCode: user.referralCode },
     });
   })

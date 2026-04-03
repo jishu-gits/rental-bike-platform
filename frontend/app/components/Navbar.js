@@ -188,10 +188,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-      {/* Floating Help Button */}
-      <Link href="/help" className="floating-help" title="Help & Support">
-        <HelpCircle size={22} />
-      </Link>
     </nav>
   );
 }
