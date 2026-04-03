@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Calendar, Clock, CheckCircle, AlertCircle, Loader, Wallet, MapPin, Zap } from 'lucide-react';
 import './booking-modal.css';
-import { loadRazorpayScript } from '@/utils/loadRazorpay';
+import { loadRazorpayScript } from '../utils/loadRazorpay';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const PLAN_TABS = ['hourly', 'daily', 'weekly', 'monthly'];
