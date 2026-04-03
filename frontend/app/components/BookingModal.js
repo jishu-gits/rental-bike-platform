@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Calendar, Clock, CheckCircle, AlertCircle, Loader, Wallet, MapPin, Zap } from 'lucide-react';
 import './booking-modal.css';
+import { loadRazorpayScript } from '@/utils/loadRazorpay';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const PLAN_TABS = ['hourly', 'daily', 'weekly', 'monthly'];
@@ -55,7 +56,6 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
-  const [payMethod, setPayMethod] = useState('upi'); // 'upi' | 'wallet'
 
   const [kycStatus, setKycStatus] = useState('loading');
   const [bookingStatus, setBookingStatus] = useState(null);
@@ -110,6 +110,14 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
     }
 
     try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setBookingStatus('error');
+        setBookingMsg('Failed to load payment gateway. Please check your internet connection.');
+        setLoading(false);
+        return;
+      }
+
       const endDateVal = plan === 'hourly'
         ? new Date(new Date(`${startDate}T${startTime}`).getTime() + hours * 3600000).toISOString()
         : endDate;
@@ -442,63 +450,73 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
 
             {/* STEP 3 — Payment */}
             {step === 3 && (
-              <div className="step-content">
-                <h3 style={{ marginBottom: '1.25rem' }}>Payment</h3>
+              <div style={{ padding: '8px 0' }}>
+                <h3 style={{ marginBottom: '16px' }}>Order Summary</h3>
 
-                {/* Wallet Toggle */}
-                {walletBalance > 0 && (
-                  <div className={`wallet-toggle ${useWallet ? 'active' : ''}`} onClick={() => setUseWallet(!useWallet)}>
-                    <Wallet size={18} />
-                    <div>
-                      <strong>Use Wallet Balance</strong>
-                      <p>Available: ₹{walletBalance.toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="toggle-switch">{useWallet ? '✓' : '○'}</div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ opacity: 0.7 }}>{bike.brand} {bike.model}</span>
+                    <span>₹{totalCost.toLocaleString('en-IN')}</span>
                   </div>
-                )}
-
-                {/* Payment Method */}
-                {remainingToPay > 0 && (
-                  <div style={{ marginTop: '1rem' }}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>Pay remaining ₹{remainingToPay.toLocaleString('en-IN')} via:</p>
-                    <div className="pay-methods">
-                      <button className={`pay-method-btn ${payMethod === 'upi' ? 'active' : ''}`} onClick={() => setPayMethod('upi')}>
-                        📱 UPI
-                      </button>
-                      <button className={`pay-method-btn ${payMethod === 'card' ? 'active' : ''}`} onClick={() => setPayMethod('card')}>
-                        💳 Card
-                      </button>
-                    </div>
-                    {payMethod === 'upi' && (
-                      <div className="upi-info">
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>UPI ID: <strong style={{ color: 'var(--primary-color)' }}>ridepulse@upi</strong></p>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>After payment confirmation, click "Confirm Booking" below.</p>
-                      </div>
-                    )}
-                    {payMethod === 'card' && (
-                      <div className="upi-info">
-                        <input className="date-input" placeholder="Card number (simulated)" style={{ marginBottom: '0.5rem' }} readOnly />
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Payment gateway integration — click Confirm to simulate.</p>
-                      </div>
-                    )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ opacity: 0.7 }}>Plan discount</span>
+                    <span style={{ color: '#00ff88' }}>- ₹{(grandTotal - totalCost - deliverySurcharge > 0 ? (grandTotal - totalCost - deliverySurcharge).toLocaleString('en-IN') : 0)}</span>
                   </div>
-                )}
-
-                {/* Final Summary */}
-                <div className="cost-summary">
-                  <div className="cost-row"><span>Grand Total</span><span>₹{grandTotal.toLocaleString('en-IN')}</span></div>
-                  {useWallet && <div className="cost-row discount"><span>Wallet deducted</span><span>−₹{walletDeduction.toLocaleString('en-IN')}</span></div>}
-                  <div className="cost-row total-cost"><span>To pay now</span><span>₹{remainingToPay.toLocaleString('en-IN')}</span></div>
+                  {deliverySurcharge > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ opacity: 0.7 }}>Delivery fee</span>
+                      <span>₹{deliverySurcharge.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    paddingTop: '12px',
+                    marginTop: '8px',
+                    fontWeight: 600,
+                    fontSize: '16px'
+                  }}>
+                    <span>Total</span>
+                    <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
 
+                <p style={{ opacity: 0.6, fontSize: '13px', marginBottom: '20px', textAlign: 'center' }}>
+                  You will be redirected to Razorpay's secure payment page.
+                  Accepts UPI, cards, netbanking & wallets.
+                </p>
+
                 {bookingStatus === 'error' && (
-                  <div className="booking-alert booking-error"><AlertCircle size={16} /> {bookingMsg}</div>
+                  <div style={{
+                    background: 'rgba(255,59,48,0.15)',
+                    border: '1px solid rgba(255,59,48,0.3)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    color: '#ff6b6b',
+                    fontSize: '13px'
+                  }}>
+                    {bookingMsg}
+                  </div>
                 )}
 
-                <div className="modal-nav">
-                  <button className="btn-secondary" onClick={() => setStep(2)}>← Back</button>
-                  <button className="btn-primary" onClick={handleBook} disabled={loading}>
-                    {loading ? <><Loader size={16} className="animate-spin" /> Confirming...</> : `Confirm Booking · ₹${grandTotal.toLocaleString('en-IN')}`}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => setStep(2)} className="btn-secondary">
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleBook}
+                    disabled={loading}
+                    className="btn-primary"
+                    style={{ flex: 1 }}
+                  >
+                    {loading ? 'Processing...' : `Pay ₹${grandTotal.toLocaleString('en-IN')} →`}
                   </button>
                 </div>
               </div>
