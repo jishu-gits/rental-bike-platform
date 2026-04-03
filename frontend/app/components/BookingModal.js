@@ -118,25 +118,33 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
         return;
       }
 
-      const endDateVal = plan === 'hourly'
-        ? new Date(new Date(`${startDate}T${startTime}`).getTime() + hours * 3600000).toISOString()
-        : endDate;
-      const startDateVal = plan === 'hourly' ? `${startDate}T${startTime}` : startDate;
+      const bookingPayload = plan === 'hourly'
+        ? {
+            bikeId: bike._id,
+            planType: plan,
+            date: startDate,
+            startTime,
+            durationHours: hours,
+            deliveryType,
+            deliveryAddress: deliveryType === 'doorstep' ? deliveryAddress : {},
+            deliverySlot: deliveryType === 'doorstep' ? deliverySlot : '',
+            useWallet,
+          }
+        : {
+            bikeId: bike._id,
+            planType: plan,
+            startDate,
+            endDate,
+            deliveryType,
+            deliveryAddress: deliveryType === 'doorstep' ? deliveryAddress : {},
+            deliverySlot: deliveryType === 'doorstep' ? deliverySlot : '',
+            useWallet,
+          };
 
       const bookingRes = await fetch(`${API}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          bikeId: bike._id,
-          planType: plan,
-          startDate: startDateVal,
-          endDate: endDateVal,
-          hours: plan === 'hourly' ? hours : 0,
-          deliveryType,
-          deliveryAddress: deliveryType === 'doorstep' ? deliveryAddress : {},
-          deliverySlot: deliveryType === 'doorstep' ? deliverySlot : '',
-          useWallet,
-        }),
+        body: JSON.stringify(bookingPayload),
       });
 
       const bookingData = await bookingRes.json();

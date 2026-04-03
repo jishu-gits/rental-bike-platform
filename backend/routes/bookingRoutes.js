@@ -43,11 +43,20 @@ router.post(
   authMiddleware(),
   validate(createBookingSchema),
   catchAsync(async (req, res, next) => {
-    const {
-      bikeId, startDate, endDate, planType = 'daily', hours = 0,
-      deliveryType = 'pickup', deliveryAddress, deliverySlot,
-      useWallet = false,
-    } = req.body;
+    const { planType, bikeId, deliveryType, useWallet } = req.body;
+
+    let startDate, endDate;
+
+    if (planType === 'hourly') {
+      const { date, startTime, durationHours } = req.body;
+      // Build startDate from date + startTime
+      startDate = new Date(`${date}T${startTime}:00`);
+      // Auto-calculate endDate
+      endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(req.body.startDate);
+      endDate = new Date(req.body.endDate);
+    }
 
     // KYC check
     const kyc = await KYC.findOne({ userId: req.user.id });
@@ -62,7 +71,19 @@ router.post(
     }
 
     // Cost calculation
-    let totalCost = computeCost(bike.pricePerDay, planType, startDate, endDate, hours);
+    let totalCost;
+    if (planType === 'hourly') {
+      totalCost = Math.round((bike.pricePerDay / 24) * req.body.durationHours);
+    } else if (planType === 'daily') {
+      const days = Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      totalCost = Math.round(bike.pricePerDay * days);
+    } else if (planType === 'weekly') {
+      const days = Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      totalCost = Math.round(bike.pricePerDay * days * 0.85);
+    } else if (planType === 'monthly') {
+      const days = Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      totalCost = Math.round(bike.pricePerDay * days * 0.70);
+    }
 
     // Distance-based doorstep delivery fee
     let deliveryFee = 0;
@@ -132,12 +153,12 @@ router.post(
           planType,
           startDate,
           endDate,
-          hours: planType === 'hourly' ? (hours || 1) : 0,
+          hours: planType === 'hourly' ? req.body.durationHours : 0,
           totalCost,
           status: initialStatus,
           deliveryType,
-          deliveryAddress: deliveryType === 'doorstep' ? deliveryAddress : {},
-          deliverySlot: deliveryType === 'doorstep' ? deliverySlot : '',
+          deliveryAddress: deliveryType === 'doorstep' ? req.body.deliveryAddress : {},
+          deliverySlot: deliveryType === 'doorstep' ? req.body.deliverySlot : '',
           useWallet,
           walletDeducted,
         }], { session });
@@ -156,7 +177,7 @@ router.post(
         `New booking on your ${bike.brand} ${bike.model} from ${new Date(startDate).toLocaleDateString('en-IN')}`);
     } catch (_) {}
 
-    res.status(201).json({ success: true, booking, deliveryFee });
+    res.status(201).json({ success: true, data: booking, deliveryFee });
   })
 );
 
