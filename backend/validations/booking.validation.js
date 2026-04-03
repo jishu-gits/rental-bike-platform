@@ -11,7 +11,14 @@ const createBookingSchema = z
 
     startDate: z
       .string({ required_error: 'Start date is required' })
-      .refine((val) => !isNaN(Date.parse(val)) && new Date(val) > new Date(), 'startDate must be a valid future date'),
+      .refine((val) => {
+        if (isNaN(Date.parse(val))) return false;
+        const selected = new Date(val);
+        selected.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selected >= today;
+      }, 'Start date cannot be in the past'),
 
     endDate: z
       .string({ required_error: 'End date is required' })
@@ -32,8 +39,14 @@ const createBookingSchema = z
   .superRefine((data, ctx) => {
     if (!data.startDate || isNaN(Date.parse(data.startDate))) {
       ctx.addIssue({ code: z.ZodIssueCode.invalid_type, path: ['startDate'], message: 'startDate must be a valid date' });
-    } else if (new Date(data.startDate) <= new Date()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['startDate'], message: 'startDate must be a valid future date' });
+    } else {
+      const selected = new Date(data.startDate);
+      selected.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selected < today) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['startDate'], message: 'startDate cannot be in the past' });
+      }
     }
 
     if (data.planType === 'hourly') {
