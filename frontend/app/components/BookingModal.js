@@ -62,6 +62,7 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
   const [bookingMsg, setBookingMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [user, setUser] = useState(null);
 
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const today = new Date().toISOString().split('T')[0];
@@ -73,6 +74,8 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    if (storedUser) setUser(storedUser);
     if (!token) { setIsGuest(true); setKycStatus('not_started'); return; }
 
     // Fetch KYC status
@@ -96,14 +99,23 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
   const handleBook = async () => {
     setLoading(true);
     setBookingStatus(null);
+    setBookingMsg('');
+
     const token = localStorage.getItem('token');
+    if (!token) {
+      setBookingStatus('error');
+      setBookingMsg('Please log in to continue booking.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const endDateVal = plan === 'hourly'
         ? new Date(new Date(`${startDate}T${startTime}`).getTime() + hours * 3600000).toISOString()
         : endDate;
       const startDateVal = plan === 'hourly' ? `${startDate}T${startTime}` : startDate;
 
-      const res = await fetch(`${API}/api/bookings`, {
+      const bookingRes = await fetch(`${API}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -118,18 +130,100 @@ export default function BookingModal({ bike, onClose, onSuccess }) {
           useWallet,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.message === 'KYC_REQUIRED') throw new Error('KYC_REQUIRED');
-        throw new Error(data.message || 'Booking failed');
+
+      const bookingData = await bookingRes.json();
+      if (!bookingRes.ok) {
+        if (bookingData.message === 'KYC_REQUIRED') throw new Error('KYC verification required.');
+        throw new Error(bookingData.message || 'Booking creation failed');
       }
-      setBookingStatus('success');
-      setBookingMsg(`Booking confirmed! ₹${grandTotal.toLocaleString('en-IN')} total.${walletDeduction > 0 ? ` ₹${walletDeduction} paid from wallet.` : ''}`);
-      if (onSuccess) onSuccess();
+
+      const bookingId = bookingData.booking?._id || bookingData.data?._id;
+      if (!bookingId) throw new Error('Booking ID missing in response');
+
+      // If wallet covered full cost, the backend confirms immediately.
+      if (remainingToPay <= 0 || (bookingData.booking?.status === 'confirmed')) {
+        setBookingStatus('success');
+        setBookingMsg(`Booking confirmed! ₹${grandTotal.toLocaleString('en-IN')} total. ${walletDeduction > 0 ? `₹${walletDeduction} used from wallet.` : ''}`);
+        if (onSuccess) onSuccess();
+        setLoading(false);
+        return;
+      }
+
+      // Create Razorpay order for outstanding amount
+      const orderRes = await fetch(`${API}/api/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          amount: Math.round(Math.max(0, remainingToPay) * 100),
+          bookingId,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(orderData.message || 'Failed to create payment order');
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'RidePulse',
+        description: `Booking: ${bike.brand} ${bike.model}`,
+        order_id: orderData.orderId,
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch(`${API}/api/payments/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok) {
+              setBookingStatus('success');
+              setBookingMsg('Booking confirmed! Your payment was successful.');
+              if (onSuccess) onSuccess();
+            } else {
+              setBookingStatus('error');
+              setBookingMsg(verifyData.message || 'Payment verification failed.');
+            }
+          } catch (e) {
+            setBookingStatus('error');
+            setBookingMsg('Payment verification failed. Contact support.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: { color: '#00ff88' },
+        modal: {
+          ondismiss: async () => {
+            await fetch(`${API}/api/bookings/${bookingId}/cancel`, {
+              method: 'PATCH',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setBookingStatus('error');
+            setBookingMsg('Payment was cancelled. Your booking has been released.');
+            setLoading(false);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      setLoading(false);
+
     } catch (err) {
       setBookingStatus('error');
-      setBookingMsg(err.message);
-    } finally {
+      setBookingMsg(err.message || 'Something went wrong. Please try again.');
       setLoading(false);
     }
   };

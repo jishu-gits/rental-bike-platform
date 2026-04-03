@@ -100,7 +100,7 @@ router.post(
         // Concurrency guard: reject overlapping bookings for the same bike
         const conflict = await Booking.findOne({
           bikeId,
-          status: { $in: ['pending', 'confirmed'] },
+          status: { $in: ['pending', 'pending_payment', 'confirmed'] },
           $or: [{ startDate: { $lt: new Date(endDate) }, endDate: { $gt: new Date(startDate) } }],
         }).session(session);
 
@@ -124,6 +124,8 @@ router.post(
           }
         }
 
+        const initialStatus = walletDeducted >= totalCost ? 'confirmed' : 'pending_payment';
+
         [booking] = await Booking.create([{
           bikeId,
           customerId: req.user.id,
@@ -132,11 +134,12 @@ router.post(
           endDate,
           hours: planType === 'hourly' ? (hours || 1) : 0,
           totalCost,
+          status: initialStatus,
           deliveryType,
           deliveryAddress: deliveryType === 'doorstep' ? deliveryAddress : {},
           deliverySlot: deliveryType === 'doorstep' ? deliverySlot : '',
           useWallet,
-          walletDeducted: useWallet ? (await Wallet.findOne({ userId: req.user.id }).session(session))?.balance >= 0 ? (Math.min((await Wallet.findOne({ userId: req.user.id }).session(session))?.balance || 0, totalCost)) : 0 : 0,
+          walletDeducted,
         }], { session });
       });
     } finally {
