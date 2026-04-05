@@ -26,11 +26,93 @@ const createBookingSchema = z.discriminatedUnion('planType', [
       .optional(),
     deliverySlot: z.string().optional(),
     useWallet: z.boolean().default(false),
+  }).superRefine((data, ctx) => {
+    if (data.deliveryType === 'doorstep' && !data.deliveryAddress?.city) {
+      ctx.addIssue({
+        path: ['deliveryAddress', 'city'],
+        code: z.ZodIssueCode.custom,
+        message: 'Delivery city is required for doorstep delivery',
+      });
+    }
   }),
 
-  // Daily / Weekly / Monthly — needs startDate and endDate
+  // Daily — needs startDate and endDate
   z.object({
-    planType: z.enum(['daily', 'weekly', 'monthly']),
+    planType: z.literal('daily'),
+    bikeId: objectIdSchema,
+    startDate: z.string().refine((val) => {
+      const selected = new Date(val);
+      selected.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return selected >= today;
+    }, { message: 'Start date cannot be in the past' }),
+    endDate: z.string(),
+    deliveryType: z.enum(['pickup', 'doorstep']).default('pickup'),
+    deliveryAddress: z
+      .object({ street: z.string().optional(), city: z.string().optional(), pincode: z.string().optional() })
+      .optional(),
+    deliverySlot: z.string().optional(),
+    useWallet: z.boolean().default(false),
+  }).superRefine((data, ctx) => {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    if (end <= start) {
+      ctx.addIssue({
+        path: ['endDate'],
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after start date',
+      });
+    }
+    if (data.deliveryType === 'doorstep' && !data.deliveryAddress?.city) {
+      ctx.addIssue({
+        path: ['deliveryAddress', 'city'],
+        code: z.ZodIssueCode.custom,
+        message: 'Delivery city is required for doorstep delivery',
+      });
+    }
+  }),
+
+  // Weekly — needs startDate and endDate
+  z.object({
+    planType: z.literal('weekly'),
+    bikeId: objectIdSchema,
+    startDate: z.string().refine((val) => {
+      const selected = new Date(val);
+      selected.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return selected >= today;
+    }, { message: 'Start date cannot be in the past' }),
+    endDate: z.string(),
+    deliveryType: z.enum(['pickup', 'doorstep']).default('pickup'),
+    deliveryAddress: z
+      .object({ street: z.string().optional(), city: z.string().optional(), pincode: z.string().optional() })
+      .optional(),
+    deliverySlot: z.string().optional(),
+    useWallet: z.boolean().default(false),
+  }).superRefine((data, ctx) => {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    if (end <= start) {
+      ctx.addIssue({
+        path: ['endDate'],
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be after start date',
+      });
+    }
+    if (data.deliveryType === 'doorstep' && !data.deliveryAddress?.city) {
+      ctx.addIssue({
+        path: ['deliveryAddress', 'city'],
+        code: z.ZodIssueCode.custom,
+        message: 'Delivery city is required for doorstep delivery',
+      });
+    }
+  }),
+
+  // Monthly — needs startDate and endDate
+  z.object({
+    planType: z.literal('monthly'),
     bikeId: objectIdSchema,
     startDate: z.string().refine((val) => {
       const selected = new Date(val);
