@@ -541,6 +541,7 @@ export default function LoginPage() {
                     {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
                   </button>
                 </div>
+              </>
             )}
           </div>
         )}
