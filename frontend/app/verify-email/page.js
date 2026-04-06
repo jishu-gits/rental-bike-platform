@@ -1,67 +1,103 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import styles from '../auth.css';
 
 export default function VerifyEmailPage() {
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get('token');
-
-  const [status, setStatus] = useState('pending');
-  const [message, setMessage] = useState('Verifying your email address...');
+  const [status, setStatus] = useState('verifying'); // verifying | success | error
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
+    const token = params.get('token');
     if (!token) {
       setStatus('error');
-      setMessage('Verification token missing. Please use the link sent to your email.');
+      setMessage('Invalid verification link.');
       return;
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-    fetch(`${apiUrl}/api/auth/verify-email/${encodeURIComponent(token)}`)
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) {
-          const errText = data.message || 'Unable to verify email.';
-          throw new Error(errText);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-email?token=${token}`)
+      .then(res => {
+        if (res.redirected || res.ok) {
+          setStatus('success');
+          // Update localStorage if user is already logged in
+          const stored = localStorage.getItem('user');
+          if (stored) {
+            const u = JSON.parse(stored);
+            u.emailVerified = true;
+            localStorage.setItem('user', JSON.stringify(u));
+          }
+          setTimeout(() => router.push('/login?message=email_verified'), 2000);
+        } else {
+          return res.json().then(d => {
+            setStatus('error');
+            setMessage(d.message || 'Verification failed.');
+          });
         }
-        setStatus('success');
-        setMessage(data.message || 'Email verified successfully! Redirecting to login...');
-        setTimeout(() => router.push('/login'), 2500);
       })
-      .catch((err) => {
+      .catch(() => {
         setStatus('error');
-        setMessage(err.message || 'Verification failed.');
+        setMessage('Something went wrong. Please try again.');
       });
-  }, [token, router]);
-
-  const isLoading = status === 'pending';
-  const isSuccess = status === 'success';
-  const isError = status === 'error';
-
-  const statusColor = isSuccess ? '#29d391' : isError ? '#ff5e6c' : '#7c7c7c';
+  }, []);
 
   return (
-    <div className="auth-window">
-      <div className="auth-inner">
-        <h1>Verify Your Email</h1>
-        <p style={{ color: statusColor, minHeight: '2rem' }}>{message}</p>
-
-        {isLoading && <p>One moment...</p>}
-
-        {(isSuccess || isError) && (
-          <div style={{ marginTop: '1.25rem' }}>
-            <Link href="/login" className="button">
-              Go to login
-            </Link>
-            <Link href="/" className="link-secondary" style={{ marginLeft: '1rem' }}>
-              Home
-            </Link>
-          </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+    }}>
+      <div style={{
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px',
+        padding: '40px 32px',
+        maxWidth: '400px',
+        width: '100%',
+        textAlign: 'center',
+      }}>
+        {status === 'verifying' && (
+          <>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>⏳</div>
+            <h2 style={{ color: 'white' }}>Verifying your email...</h2>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '50%',
+              background: 'rgba(0,255,136,0.15)',
+              border: '2px solid #00ff88',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: '28px',
+            }}>✓</div>
+            <h2 style={{ color: '#00ff88', marginBottom: '8px' }}>Email Verified!</h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+              Redirecting you to login...
+            </p>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <div style={{ fontSize: '40px', marginBottom: '16px' }}>✗</div>
+            <h2 style={{ color: '#ff6b6b', marginBottom: '8px' }}>Verification Failed</h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '24px' }}>
+              {message}
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              style={{
+                background: 'linear-gradient(135deg, #00ff88, #00cc66)',
+                color: '#000', border: 'none', borderRadius: '10px',
+                padding: '12px 24px', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Back to Login
+            </button>
+          </>
         )}
       </div>
     </div>

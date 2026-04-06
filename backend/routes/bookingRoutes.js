@@ -59,8 +59,7 @@ router.post(
     }
 
     // KYC check
-    const kyc = await KYC.findOne({ userId: req.user.id });
-    if (!kyc || kyc.status !== 'verified') {
+    if (!req.user.kycVerified) {
       return next(new AppError('KYC verification is required before booking', 403));
     }
 

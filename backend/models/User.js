@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   emailVerified: { type: Boolean, default: false },
   phoneVerified: { type: Boolean, default: false },
   phone: { type: String, default: null },
+  kycVerified: { type: Boolean, default: false },
   suspended: { type: Boolean, default: false },
   // Backwards-compatible field — keep if present
   isVerified: { type: Boolean, default: false },

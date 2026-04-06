@@ -1,276 +1,343 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, LogIn, Loader } from 'lucide-react';
-import '../auth.css';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loginMethod, setLoginMethod] = useState('email'); // 'email' or 'phone'
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const params = useSearchParams();
+
+  const [method, setMethod] = useState('email'); // 'email' | 'phone'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError('');
+  // Show message if redirected after email verification
+  useEffect(() => {
+    const msg = params.get('message');
+    if (msg === 'email_verified') setSuccessMsg('Email verified! You can now log in.');
+    if (msg === 'already_verified') setSuccessMsg('Email already verified. Please log in.');
+  }, []);
+
+  const saveSession = (data) => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    router.push('/');
   };
 
-  const handleSubmit = async (e) => {
+  // Email + Password login
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    
+    setLoading(true); setError('');
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!baseUrl) throw new Error('API URL is not configured.');
-      const response = await fetch(`${baseUrl}/api/auth/login`, {
+      const res = await fetch(`${API}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email, password }),
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      const data = await res.json();
+      if (!res.ok) { setError(data.message); return; }
+
+      // Save warning to show after redirect
+      if (data.emailWarning) {
+        sessionStorage.setItem('emailWarning', data.emailWarning);
       }
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      window.location.href = '/';
-    } catch (err) {
-      setError(err.message);
+      saveSession(data);
+    } catch {
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Request OTP
   const handleRequestOtp = async () => {
-    setOtpLoading(true);
-    setError('');
+    if (phone.length !== 10) {
+      setError('Enter a valid 10-digit mobile number');
+      return;
+    }
+    setOtpLoading(true); setError('');
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!baseUrl) throw new Error('API URL is not configured.');
-      const response = await fetch(`${baseUrl}/api/auth/request-otp`, {
+      const res = await fetch(`${API}/api/auth/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
       });
-      const data = await response.json();
-      if (response.ok) {
-        setOtpSent(true);
-      } else {
-        setError(data.message);
-      }
-    } catch (err) {
-      setError('Failed to send OTP. Try again.');
+      const data = await res.json();
+      if (!res.ok) { setError(data.message); return; }
+      setOtpSent(true);
+    } catch {
+      setError('Failed to send OTP. Please try again.');
+    } finally {
+      setOtpLoading(false);
     }
-    setOtpLoading(false);
   };
 
+  // OTP Login
   const handleOtpLogin = async () => {
-    setLoading(true);
-    setError('');
+    if (otp.length !== 6) { setError('Enter the 6-digit OTP'); return; }
+    setLoading(true); setError('');
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!baseUrl) throw new Error('API URL is not configured.');
-      const response = await fetch(`${baseUrl}/api/auth/login-otp`, {
+      const res = await fetch(`${API}/api/auth/login-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otp }),
       });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = '/';
-      } else {
-        setError(data.message);
-      }
-    } catch (err) {
-      setError('Login failed. Try again.');
+      const data = await res.json();
+      if (!res.ok) { setError(data.message); return; }
+      saveSession(data);
+    } catch {
+      setError('Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  // Styles
+  const inputStyle = {
+    width: '100%',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '10px',
+    padding: '13px 16px',
+    color: 'white',
+    fontSize: '15px',
+    boxSizing: 'border-box',
+    outline: 'none',
+  };
+
+  const btnStyle = {
+    width: '100%',
+    background: 'linear-gradient(135deg, #00ff88, #00cc66)',
+    color: '#000',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px',
+    fontSize: '15px',
+    fontWeight: 600,
+    cursor: 'pointer',
   };
 
   return (
-    <div className="auth-container section">
-      <div className="auth-card glass">
-        <div className="auth-header">
-          <h1 className="auth-title">Welcome Back</h1>
-          <p className="auth-subtitle">Log in to your RidePulse account.</p>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+    }}>
+      <div style={{
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '20px',
+        padding: '36px 32px',
+        maxWidth: '440px',
+        width: '100%',
+      }}>
+        <h1 style={{ color: 'white', marginBottom: '6px', fontSize: '26px' }}>Welcome Back</h1>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '28px', fontSize: '14px' }}>
+          Log in to your RidePulse account.
+        </p>
 
-        {error && <div style={{ color: '#ff4d4d', background: 'rgba(255, 77, 77, 0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'left', border: '1px solid rgba(255, 77, 77, 0.2)' }}>{error}</div>}
+        {/* Success message */}
+        {successMsg && (
+          <div style={{
+            background: 'rgba(0,255,136,0.1)',
+            border: '1px solid rgba(0,255,136,0.25)',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            marginBottom: '20px',
+            color: '#00ff88',
+            fontSize: '14px',
+          }}>
+            {successMsg}
+          </div>
+        )}
 
-        {/* Login method toggle */}
+        {/* Error message */}
+        {error && (
+          <div style={{
+            background: 'rgba(255,59,48,0.12)',
+            border: '1px solid rgba(255,59,48,0.25)',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            marginBottom: '20px',
+            color: '#ff6b6b',
+            fontSize: '14px',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Method toggle */}
         <div style={{
           display: 'flex',
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: '10px',
+          background: 'rgba(255,255,255,0.06)',
+          borderRadius: '12px',
           padding: '4px',
           marginBottom: '24px',
         }}>
-          <button
-            onClick={() => setLoginMethod('email')}
-            style={{
-              flex: 1,
-              padding: '8px',
-              borderRadius: '8px',
-              border: 'none',
-              background: loginMethod === 'email' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Email & Password
-          </button>
-          <button
-            onClick={() => setLoginMethod('phone')}
-            style={{
-              flex: 1,
-              padding: '8px',
-              borderRadius: '8px',
-              border: 'none',
-              background: loginMethod === 'phone' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Mobile OTP
-          </button>
+          {['email', 'phone'].map((m) => (
+            <button
+              key={m}
+              onClick={() => { setMethod(m); setError(''); setOtpSent(false); }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '9px',
+                border: 'none',
+                background: method === m ? 'rgba(255,255,255,0.12)' : 'transparent',
+                color: method === m ? 'white' : 'rgba(255,255,255,0.45)',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: method === m ? 500 : 400,
+                transition: 'all 0.2s',
+              }}
+            >
+              {m === 'email' ? 'Email & Password' : 'Mobile OTP'}
+            </button>
+          ))}
         </div>
 
-        {/* Email/Password form */}
-        {loginMethod === 'email' && (
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email Address</label>
-              <div className="input-wrapper">
-                <Mail className="input-icon" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  className="form-input"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
+        {/* EMAIL LOGIN */}
+        {method === 'email' && (
+          <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                style={inputStyle}
+                placeholder="you@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                style={inputStyle}
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                <Link href="/forgot-password" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                  Forgot password?
+                </Link>
               </div>
             </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <Lock className="input-icon" />
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <Link href="#" className="forgot-password">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" className="btn-primary btn-submit" disabled={loading}>
-              {loading ? <Loader className="animate-spin" size={18} /> : (
-                <>Log In <LogIn size={18} /></>
-              )}
+            <button type="submit" style={{ ...btnStyle, opacity: loading ? 0.7 : 1 }} disabled={loading}>
+              {loading ? 'Logging in...' : 'Log In →'}
             </button>
           </form>
         )}
 
-        {/* Phone OTP form */}
-        {loginMethod === 'phone' && (
-          <div>
-            <div className="form-group">
-              <label className="form-label">Mobile Number</label>
-              <div className="input-wrapper">
+        {/* PHONE OTP LOGIN */}
+        {method === 'phone' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                Mobile Number
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '10px',
+                  padding: '13px 14px',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '15px',
+                  flexShrink: 0,
+                }}>
+                  +91
+                </div>
                 <input
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  style={{ ...inputStyle }}
+                  placeholder="98765 43210"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="form-input"
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
             </div>
 
             {!otpSent ? (
               <button
+                style={{ ...btnStyle, opacity: otpLoading || phone.length !== 10 ? 0.6 : 1 }}
                 onClick={handleRequestOtp}
-                disabled={otpLoading || phone.length < 10}
-                className="btn-primary btn-submit"
+                disabled={otpLoading || phone.length !== 10}
               >
-                {otpLoading ? <Loader className="animate-spin" size={18} /> : 'Send OTP'}
+                {otpLoading ? 'Sending OTP...' : 'Send OTP'}
               </button>
             ) : (
               <>
-                <div className="form-group">
-                  <label className="form-label">Enter OTP</label>
-                  <div className="input-wrapper">
-                    <input
-                      type="text"
-                      placeholder="6-digit OTP"
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
+                <div style={{
+                  background: 'rgba(0,255,136,0.08)',
+                  border: '1px solid rgba(0,255,136,0.2)',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
+                  color: '#00ff88',
+                  fontSize: '13px',
+                }}>
+                  OTP sent to +91 {phone}
+                </div>
+                <div>
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', display: 'block', marginBottom: '6px' }}>
+                    Enter 6-digit OTP
+                  </label>
+                  <input
+                    type="text"
+                    style={{ ...inputStyle, letterSpacing: '6px', fontSize: '20px', textAlign: 'center' }}
+                    placeholder="------"
+                    maxLength={6}
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                  />
                 </div>
                 <button
+                  style={{ ...btnStyle, opacity: loading || otp.length !== 6 ? 0.6 : 1 }}
                   onClick={handleOtpLogin}
                   disabled={loading || otp.length !== 6}
-                  className="btn-primary btn-submit"
                 >
-                  {loading ? <Loader className="animate-spin" size={18} /> : 'Log In with OTP'}
+                  {loading ? 'Verifying...' : 'Verify & Log In →'}
                 </button>
-                <p
-                  onClick={handleRequestOtp}
+                <button
+                  onClick={() => { setOtpSent(false); setOtp(''); setError(''); handleRequestOtp(); }}
                   style={{
-                    textAlign: 'center',
-                    marginTop: '12px',
-                    fontSize: '13px',
-                    opacity: 0.6,
-                    cursor: 'pointer',
+                    background: 'none', border: 'none',
+                    color: 'rgba(255,255,255,0.4)',
+                    cursor: 'pointer', fontSize: '13px', textAlign: 'center',
                   }}
                 >
                   Resend OTP
-                </p>
+                </button>
               </>
             )}
           </div>
         )}
 
-        <div className="auth-footer">
+        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'rgba(255,255,255,0.4)' }}>
           Don't have an account?{' '}
-          <Link href="/signup" className="auth-link">
+          <Link href="/signup" style={{ color: '#00ff88', textDecoration: 'none', fontWeight: 500 }}>
             Sign up here
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );

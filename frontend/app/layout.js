@@ -1,6 +1,7 @@
 import './globals.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { EmailVerificationBanner } from './components/EmailVerificationBanner';
 
 export const metadata = {
   title: 'RidePulse - Premium Bike Rentals',
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Navbar />
+        <EmailVerificationBanner />
         <main>{children}</main>
         <Footer />
       </body>
