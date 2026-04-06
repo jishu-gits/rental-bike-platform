@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['customer', 'provider', 'admin'], default: 'customer' },
   // Email / phone verification flags (added to support verification flow)
   emailVerified: { type: Boolean, default: false },
+  emailOtp: { type: String, default: null },
+  emailOtpExpiry: { type: Date, default: null },
   phoneVerified: { type: Boolean, default: false },
   phone: { type: String, default: null },
   kycVerified: { type: Boolean, default: false },

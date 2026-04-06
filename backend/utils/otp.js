@@ -38,6 +38,7 @@ async function sendOTP(phone, otp) {
   const client = getTwilio();
   if (!client) {
     console.warn(`[OTP] Twilio not configured — OTP for ${phone} not sent via SMS.`);
+    console.log(`[OTP DEBUG] ${phone} OTP: ${otp}`);
     return;
   }
   // Ensure phone is in E.164 format for India (+91)

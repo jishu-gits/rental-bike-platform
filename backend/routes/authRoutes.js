@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
@@ -11,6 +12,51 @@ const { sendEmail } = require('../utils/email');
 const { generateOTP, saveOTP, sendOTP, verifyOTP } = require('../utils/otp');
 const validate = require('../middleware/validate');
 const { registerSchema, loginSchema } = require('../validations/auth.validation');
+
+const phoneOtpRateLimit = new Map();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_PHONE_OTP_REQUESTS = 3;
+
+const createToken = (user) => jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  expiresIn: '7d',
+});
+
+const userPayload = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  emailVerified: user.emailVerified,
+  phoneVerified: user.phoneVerified,
+  kycVerified: user.kycVerified || false,
+});
+
+const authResponse = (user) => ({
+  success: true,
+  token: createToken(user),
+  user: userPayload(user),
+});
+
+async function sendEmailOtpCode(user, subject) {
+  const otp = generateOTP();
+  user.emailOtp = await bcrypt.hash(otp, 10);
+  user.emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+  await user.save();
+
+  await sendEmail({
+    to: user.email,
+    subject,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; background: #0f0f1a; color: #fff; padding: 28px; border-radius: 18px;">
+        <h2 style="margin-bottom: 12px; color: #00ff88;">RidePulse OTP Code</h2>
+        <p style="color: #ccc; line-height: 1.7;">Use the code below to continue logging in to your RidePulse account. It expires in 10 minutes.</p>
+        <div style="margin: 24px 0; padding: 22px; background: rgba(255,255,255,0.05); border-radius: 16px; text-align: center; font-size: 28px; letter-spacing: 8px; font-weight: 700;">${otp}</div>
+        <p style="color: #888; font-size: 13px;">If you did not request this code, please ignore this email.</p>
+      </div>
+    `,
+  });
+}
 
 // ─── REGISTER ───────────────────────────────────────────────
 router.post('/register', validate(registerSchema), catchAsync(async (req, res, next) => {
@@ -25,7 +71,6 @@ router.post('/register', validate(registerSchema), catchAsync(async (req, res, n
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
-
   const user = await User.create({
     name,
     email,
@@ -36,60 +81,132 @@ router.post('/register', validate(registerSchema), catchAsync(async (req, res, n
     phoneVerified: false,
   });
 
-  // Send email verification
   try {
-    const verifyToken = jwt.sign(
-      { id: user._id },
-      process.env.EMAIL_VERIFY_SECRET,
-      { expiresIn: '24h' }
-    );
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verifyToken}`;
-
-    await sendEmail({
-      to: email,
-      subject: 'Verify your RidePulse account',
-      html: `
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-          <h2 style="color: #00cc66;">Welcome to RidePulse, ${name}!</h2>
-          <p>Click the button below to verify your email address.</p>
-          <a href="${verifyUrl}" style="
-            display: inline-block;
-            background: #00cc66;
-            color: #000;
-            padding: 14px 28px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            margin: 16px 0;
-          ">Verify Email</a>
-          <p style="color: #888; font-size: 13px;">
-            This link expires in 24 hours. If you didn't create an account, ignore this email.
-          </p>
-        </div>
-      `,
-    });
+    await sendEmailOtpCode(user, 'Your RidePulse verification code');
   } catch (emailErr) {
-    console.error('Verification email failed:', emailErr.message);
-    // Don't block registration if email fails
-  }
-
-  // Send phone OTP if phone provided
-  if (phone) {
-    try {
-      const otp = generateOTP();
-      await saveOTP(phone, otp);
-      await sendOTP(phone, otp);
-    } catch (smsErr) {
-      console.error('OTP send failed:', smsErr.message);
-    }
+    console.error('Email OTP send failed:', emailErr.message);
   }
 
   res.status(201).json({
-    success: true,
-    message: phone
-      ? 'Account created. Check your email and phone for verification codes.'
-      : 'Account created. Check your email to verify your account.',
+    ...authResponse(user),
+    emailWarning: 'Verify your email to unlock all features.',
+    message: 'Account created. Check your inbox for the verification code.',
   });
+}));
+
+// ─── SEND PHONE OTP ─────────────────────────────────────────
+router.post('/send-phone-otp', catchAsync(async (req, res, next) => {
+  const { phone } = req.body;
+  if (!phone) throw new AppError('Phone number is required', 400);
+
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw new AppError('Enter a valid 10-digit Indian mobile number', 400);
+  }
+
+  const now = Date.now();
+  const entry = phoneOtpRateLimit.get(phone) || { count: 0, firstRequestAt: now };
+  if (now - entry.firstRequestAt > RATE_LIMIT_WINDOW_MS) {
+    entry.count = 0;
+    entry.firstRequestAt = now;
+  }
+
+  if (entry.count >= MAX_PHONE_OTP_REQUESTS) {
+    throw new AppError('Too many OTP requests for this phone number. Try again later.', 429);
+  }
+
+  entry.count += 1;
+  phoneOtpRateLimit.set(phone, entry);
+
+  const otp = generateOTP();
+  await saveOTP(phone, otp);
+
+  try {
+    await sendOTP(phone, otp);
+  } catch (err) {
+    console.error('Failed to send phone OTP:', err.message);
+    throw new AppError('Failed to send OTP. Please try again.', 500);
+  }
+
+  res.json({ success: true, message: `OTP sent to +91 ${phone}` });
+}));
+
+// ─── VERIFY PHONE OTP ───────────────────────────────────────
+router.post('/verify-phone-otp', catchAsync(async (req, res, next) => {
+  const { phone, otp, name } = req.body;
+  if (!phone || !otp) throw new AppError('Phone number and OTP are required', 400);
+
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw new AppError('Enter a valid 10-digit Indian mobile number', 400);
+  }
+
+  const result = await verifyOTP(phone, otp);
+  if (!result.success) throw new AppError(result.message, 400);
+
+  let user = await User.findOne({ phone });
+  if (name) {
+    if (user) throw new AppError('This phone number is already registered', 409);
+
+    const password = crypto.randomBytes(16).toString('hex');
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const email = `${phone}@phone.rp`;
+
+    user = await User.create({
+      name,
+      phone,
+      email,
+      password: hashedPassword,
+      role: 'customer',
+      emailVerified: false,
+      phoneVerified: true,
+    });
+  } else {
+    if (!user) throw new AppError('No account found with this phone number', 404);
+    if (!user.phoneVerified) {
+      user.phoneVerified = true;
+      await user.save();
+    }
+  }
+
+  res.json(authResponse(user));
+}));
+
+// ─── SEND EMAIL OTP ─────────────────────────────────────────
+router.post('/send-email-otp', catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) throw new AppError('Email is required', 400);
+
+  const user = await User.findOne({ email });
+  if (!user) throw new AppError('No account found with this email', 404);
+
+  try {
+    await sendEmailOtpCode(user, 'Your RidePulse login code');
+  } catch (emailErr) {
+    console.error('Email OTP send failed:', emailErr.message);
+    throw new AppError('Failed to send email OTP. Please try again.', 500);
+  }
+
+  res.json({ success: true, message: 'OTP sent to your email address.' });
+}));
+
+// ─── VERIFY EMAIL OTP LOGIN ─────────────────────────────────
+router.post('/verify-email-otp-login', catchAsync(async (req, res, next) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) throw new AppError('Email and OTP are required', 400);
+
+  const user = await User.findOne({ email });
+  if (!user) throw new AppError('No account found with this email', 404);
+  if (!user.emailOtp || !user.emailOtpExpiry) throw new AppError('No pending OTP found. Please request a new code.', 400);
+  if (user.emailOtpExpiry < new Date()) throw new AppError('OTP has expired. Please request a new code.', 400);
+
+  const isMatch = await bcrypt.compare(otp, user.emailOtp);
+  if (!isMatch) throw new AppError('Incorrect OTP. Please try again.', 400);
+
+  user.emailVerified = true;
+  user.emailOtp = null;
+  user.emailOtpExpiry = null;
+  await user.save();
+
+  res.json(authResponse(user));
 }));
 
 // ─── VERIFY EMAIL ────────────────────────────────────────────
@@ -161,7 +278,7 @@ router.post('/resend-verification', catchAsync(async (req, res, next) => {
   res.json({ success: true, message: 'Verification email sent. Check your inbox.' });
 }));
 
-// ─── LOGIN WITH EMAIL + PASSWORD ─────────────────────────────
+// ─── LOGIN WITH EMAIL + PASSWORD ─────────────────────────────────────
 router.post('/login', validate(loginSchema), catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -171,11 +288,7 @@ router.post('/login', validate(loginSchema), catchAsync(async (req, res, next) =
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new AppError('Invalid email or password', 401);
 
-  // Allow login regardless of email verification
-  // Just attach a warning flag if not verified
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
+  const token = createToken(user);
 
   res.json({
     success: true,
@@ -184,16 +297,7 @@ router.post('/login', validate(loginSchema), catchAsync(async (req, res, next) =
     emailWarning: !user.emailVerified
       ? 'Please verify your email to secure your account.'
       : null,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
-      kycVerified: user.kycVerified || false,
-    },
+    user: userPayload(user),
   });
 }));
 
@@ -213,17 +317,12 @@ router.post('/request-otp', catchAsync(async (req, res, next) => {
 
   const otp = generateOTP();
   await saveOTP(phone, otp);
-
-  try {
-    await sendOTP(phone, otp);
-  } catch (err) {
-    throw new AppError('Failed to send OTP. Please try again.', 500);
-  }
+  await sendOTP(phone, otp);
 
   res.json({ success: true, message: `OTP sent to +91 ${phone}` });
 }));
 
-// ─── LOGIN WITH PHONE OTP ─────────────────────────────────────
+// ─── LOGIN WITH PHONE OTP ─────────────────────────────────
 router.post('/login-otp', catchAsync(async (req, res, next) => {
   const { phone, otp } = req.body;
   if (!phone || !otp) throw new AppError('Phone number and OTP are required', 400);
@@ -234,30 +333,12 @@ router.post('/login-otp', catchAsync(async (req, res, next) => {
   const user = await User.findOne({ phone });
   if (!user) throw new AppError('Account not found', 404);
 
-  // OTP login also marks phone as verified
   if (!user.phoneVerified) {
     user.phoneVerified = true;
     await user.save();
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
-
-  res.json({
-    success: true,
-    token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      emailVerified: user.emailVerified,
-      phoneVerified: true,
-      kycVerified: user.kycVerified || false,
-    },
-  });
+  res.json({ success: true, token: createToken(user), user: userPayload(user) });
 }));
 
 // ─── VERIFY PHONE OTP (for account page) ─────────────────────
