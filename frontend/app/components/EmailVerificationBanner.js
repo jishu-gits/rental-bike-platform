@@ -11,14 +11,16 @@ export function EmailVerificationBanner() {
 
   useEffect(() => {
     const warning = sessionStorage.getItem('emailWarning');
-    const user = localStorage.getItem('user');
-    if (warning && user) {
-      const parsed = JSON.parse(user);
-      if (!parsed.emailVerified) {
-        setShow(true);
-        setEmail(parsed.email);
-        sessionStorage.removeItem('emailWarning');
-      }
+    const stored = localStorage.getItem('user');
+    if (warning && stored) {
+      try {
+        const user = JSON.parse(stored);
+        if (!user.emailVerified) {
+          setShow(true);
+          setEmail(user.email);
+          sessionStorage.removeItem('emailWarning');
+        }
+      } catch {}
     }
   }, []);
 
@@ -31,6 +33,8 @@ export function EmailVerificationBanner() {
         body: JSON.stringify({ email }),
       });
       setSent(true);
+    } catch {
+      setSent(false);
     } finally {
       setSending(false);
     }
@@ -40,8 +44,9 @@ export function EmailVerificationBanner() {
 
   return (
     <div style={{
-      background: 'rgba(255,193,7,0.12)',
-      border: '1px solid rgba(255,193,7,0.25)',
+      background: 'rgba(255,193,7,0.1)',
+      border: '1px solid rgba(255,193,7,0.2)',
+      borderBottom: '1px solid rgba(255,193,7,0.2)',
       padding: '10px 20px',
       display: 'flex',
       alignItems: 'center',
@@ -49,30 +54,47 @@ export function EmailVerificationBanner() {
       gap: '12px',
       fontSize: '13px',
     }}>
-      <span style={{ color: 'rgba(255,255,255,0.8)' }}>
-        Verify your email to secure your account.
+      <span style={{ color: 'rgba(255,255,255,0.75)' }}>
+        Verify your email address to secure your account.
       </span>
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
         {sent ? (
-          <span style={{ color: '#00ff88', fontSize: '13px' }}>Sent! Check your inbox.</span>
+          <span style={{ color: '#00ff88', fontSize: '13px' }}>
+            Sent! Check your inbox.
+          </span>
         ) : (
-          <button onClick={resend} disabled={sending} style={{
-            background: 'none', border: '1px solid rgba(255,193,7,0.4)',
-            borderRadius: '6px', color: '#ffc107',
-            padding: '4px 12px', cursor: 'pointer', fontSize: '12px',
-          }}>
+          <button
+            onClick={resend}
+            disabled={sending}
+            style={{
+              background: 'none',
+              border: '1px solid rgba(255,193,7,0.35)',
+              borderRadius: '6px',
+              color: '#ffc107',
+              padding: '4px 12px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              opacity: sending ? 0.6 : 1,
+            }}
+          >
             {sending ? 'Sending...' : 'Resend email'}
           </button>
         )}
-        <button onClick={() => setShow(false)} style={{
-          background: 'none', border: 'none',
-          color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '16px',
-        }}>
+        <button
+          onClick={() => setShow(false)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255,255,255,0.3)',
+            cursor: 'pointer',
+            fontSize: '18px',
+            lineHeight: 1,
+            padding: 0,
+          }}
+        >
           ×
         </button>
       </div>
     </div>
   );
 }
-
-export { EmailVerificationBanner };
